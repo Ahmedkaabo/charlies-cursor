@@ -18,7 +18,7 @@ CREATE TABLE employees (
   "firstName" TEXT NOT NULL,
   "lastName" TEXT NOT NULL,
   phone TEXT NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('barista', 'waiter', 'helper', 'manager')),
+  role TEXT NOT NULL CHECK (role IN ('barista', 'waiter', 'captin_order', 'helper', 'steward', 'manager')),
   "baseSalary" NUMERIC NOT NULL,
   attendance JSONB DEFAULT '{}'::jsonb,
   "bonusDays" NUMERIC DEFAULT 0,
