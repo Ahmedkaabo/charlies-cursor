@@ -78,8 +78,6 @@ const translations = {
     estimatedForCurrentMonth: "Estimated for current month",
     operationalLocations: "Operational locations",
     staffByRole: "Staff by Role",
-    distributionOfEmployees: "Distribution of employees across different roles",
-    employeesCount: "employees", // Used with number, e.g., "5 employees"
     attendanceByRole: "Attendance by Role",
     averageAttendanceRates: "Average attendance rates for each role",
     attendanceAlerts: "Attendance Alerts",
@@ -194,8 +192,6 @@ const translations = {
     estimatedForCurrentMonth: "تقديري للشهر الحالي",
     operationalLocations: "المواقع التشغيلية",
     staffByRole: "الموظفون حسب المنصب",
-    distributionOfEmployees: "توزيع الموظفين عبر المناصب المختلفة",
-    employeesCount: "موظفين", // Used with number, e.g., "5 موظفين"
     attendanceByRole: "الحضور حسب المنصب",
     averageAttendanceRates: "متوسط معدلات الحضور لكل منصب",
     attendanceAlerts: "تنبيهات الحضور",

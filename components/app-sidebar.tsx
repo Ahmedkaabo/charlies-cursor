@@ -33,31 +33,26 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
       title: "dashboard",
       url: "/dashboard",
       icon: BarChart3,
-      roles: ["admin", "manager"],
     },
     {
       title: "payroll",
       url: "/payroll",
       icon: Calendar,
-      roles: ["admin", "manager"],
     },
     {
       title: "staff",
       url: "/staff",
       icon: Users,
-      roles: ["admin", "manager"],
     },
     {
       title: "branches",
       url: "/branches",
       icon: GitBranch,
-      roles: ["admin"], // Only admins can see branches tab
     },
     {
       title: "managers",
       url: "/managers",
       icon: UserCog,
-      roles: ["admin"], // Only admins can see managers tab
     },
   ]
 
@@ -94,10 +89,6 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationItems.map((item) => {
-                // Conditionally render based on user role
-                if (item.roles.includes("admin") && !isAdmin) {
-                  return null // Hide admin-only items for managers
-                }
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
