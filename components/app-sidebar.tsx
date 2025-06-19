@@ -1,0 +1,119 @@
+"use client"
+
+import type * as React from "react"
+import { BarChart3, Calendar, Users, Building2, GitBranch, UserCog } from "lucide-react"
+import Link from "next/link"
+
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  useSidebar, // Import useSidebar
+} from "@/components/ui/sidebar"
+import { useLanguage } from "@/contexts/language-context"
+import { useAuth } from "@/contexts/auth-context" // Import useAuth
+
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {} // Define props interface
+
+export function AppSidebar({ ...props }: AppSidebarProps) {
+  // Use the defined props interface
+  const { t } = useLanguage()
+  const { isAdmin } = useAuth() // Get isAdmin from auth context
+  const { isMobile, setOpenMobile } = useSidebar() // Get isMobile and setOpenMobile
+
+  const navigationItems = [
+    {
+      title: "dashboard",
+      url: "/dashboard",
+      icon: BarChart3,
+      roles: ["admin", "manager"],
+    },
+    {
+      title: "payroll",
+      url: "/payroll",
+      icon: Calendar,
+      roles: ["admin", "manager"],
+    },
+    {
+      title: "staff",
+      url: "/staff",
+      icon: Users,
+      roles: ["admin", "manager"],
+    },
+    {
+      title: "branches",
+      url: "/branches",
+      icon: GitBranch,
+      roles: ["admin"], // Only admins can see branches tab
+    },
+    {
+      title: "managers",
+      url: "/managers",
+      icon: UserCog,
+      roles: ["admin"], // Only admins can see managers tab
+    },
+  ]
+
+  const handleMenuItemClick = () => {
+    if (isMobile) {
+      setOpenMobile(false) // Close sidebar on mobile when a menu item is clicked
+    }
+  }
+
+  return (
+    <Sidebar collapsible="icon" {...props}>
+      {" "}
+      {/* Pass all props, including 'side' */}
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <Link href="/" onClick={handleMenuItemClick}>
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                  <Building2 className="size-4" />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">Charlie's Cafe</span>
+                  <span className="truncate text-xs">Management System</span>
+                </div>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navigationItems.map((item) => {
+                // Conditionally render based on user role
+                if (item.roles.includes("admin") && !isAdmin) {
+                  return null // Hide admin-only items for managers
+                }
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <Link href={item.url} onClick={handleMenuItemClick}>
+                        <item.icon />
+                        <span>{t(item.title)}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarRail />
+    </Sidebar>
+  )
+}

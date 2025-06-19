@@ -1,0 +1,200 @@
+"use client"
+
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Calendar, Plus, Minus } from "lucide-react"
+import { AttendanceCalendar } from "./attendance-calendar"
+import { useLanguage } from "@/contexts/language-context"
+import type { Employee } from "@/types/payroll"
+
+interface AttendanceDialogProps {
+  employee: Employee
+  month: number
+  year: number
+  onEmployeeUpdate: (id: string, updates: Partial<Employee>) => void
+}
+
+export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: AttendanceDialogProps) {
+  const { t, language } = useLanguage()
+  const [open, setOpen] = useState(false)
+
+  const calculateBaseAttendedDays = (attendance: Record<number, number>) => {
+    return Object.values(attendance).reduce((sum, value) => sum + value, 0)
+  }
+
+  const getSummary = () => {
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    const baseAttendedDays = calculateBaseAttendedDays(employee.attendance)
+    const totalAdjustedDays = baseAttendedDays + employee.bonusDays - employee.penaltyDays
+    const absentDays = daysInMonth - baseAttendedDays
+
+    return { baseAttendedDays, totalAdjustedDays, absentDays }
+  }
+
+  const summary = getSummary()
+  const isRTL = language === "ar"
+
+  const handleAttendanceChange = (day: number, value: number) => {
+    const newAttendance = { ...employee.attendance, [day]: value }
+    onEmployeeUpdate(employee.id, { attendance: newAttendance })
+  }
+
+  const adjustBonusDays = (amount: number) => {
+    const newBonusDays = Math.max(0, employee.bonusDays + amount)
+    onEmployeeUpdate(employee.id, { bonusDays: newBonusDays })
+  }
+
+  const adjustPenaltyDays = (amount: number) => {
+    const newPenaltyDays = Math.max(0, employee.penaltyDays + amount)
+    onEmployeeUpdate(employee.id, { penaltyDays: newPenaltyDays })
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2">
+          <Calendar className="h-4 w-4" />
+          {calculateBaseAttendedDays(employee.attendance).toFixed(1)} {t("days")}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="w-[95vw] max-w-2xl h-[90vh] max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className={`px-4 pt-4 pb-2 border-b ${isRTL ? "text-right" : "text-left"}`}>
+          <DialogTitle className="text-lg">
+            {t("attendance")} - {employee.firstName} {employee.lastName}
+          </DialogTitle>
+          <DialogDescription className="text-sm">{t("markAttendanceDescription")}</DialogDescription>
+        </DialogHeader>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-4 py-2">
+          <div className="space-y-4">
+            {/* Calendar */}
+            <AttendanceCalendar
+              month={month}
+              year={year}
+              attendance={employee.attendance}
+              onChange={handleAttendanceChange}
+              startDate={employee.startDate}
+            />
+
+            {/* Legend */}
+            <div className={`flex flex-wrap gap-4 text-sm ${isRTL ? "justify-end" : "justify-start"}`}>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-green-100 border border-green-200 rounded flex items-center justify-center text-green-800 text-xs">
+                  ✓
+                </div>
+                <span>{t("fullDay")} (1.0)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-gray-100 border border-gray-200 rounded flex items-center justify-center text-gray-800 text-xs">
+                  ✗
+                </div>
+                <span>{t("absentDay")} (0.0)</span>
+              </div>
+            </div>
+
+            {/* Bonus/Penalty Sections */}
+            <div className="grid grid-cols-1 gap-4">
+              <div className="p-4 rounded-lg bg-green-50/50 border border-green-200">
+                <Label htmlFor="bonus" className={`text-green-800 font-semibold ${isRTL ? "text-right" : "text-left"}`}>
+                  {t("bonusDays")}
+                </Label>
+                <div className="flex items-center mt-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => adjustBonusDays(-0.25)}
+                    className={`bg-green-100 border-green-200 text-green-800 hover:bg-green-200 ${isRTL ? "rounded-l-none" : "rounded-r-none"}`}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    id="bonus"
+                    type="number"
+                    step="0.25"
+                    value={employee.bonusDays.toFixed(2)}
+                    readOnly
+                    className="flex-1 text-center bg-green-50 border-green-200 text-green-800 focus-visible:ring-0"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => adjustBonusDays(0.25)}
+                    className={`bg-green-100 border-green-200 text-green-800 hover:bg-green-200 ${isRTL ? "rounded-r-none" : "rounded-l-none"}`}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="p-4 rounded-lg bg-red-50/50 border border-red-200">
+                <Label htmlFor="penalty" className={`text-red-800 font-semibold ${isRTL ? "text-right" : "text-left"}`}>
+                  {t("penaltyDays")}
+                </Label>
+                <div className="flex items-center mt-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => adjustPenaltyDays(-0.25)}
+                    className={`bg-red-100 border-red-200 text-red-800 hover:bg-red-200 ${isRTL ? "rounded-l-none" : "rounded-r-none"}`}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    id="penalty"
+                    type="number"
+                    step="0.25"
+                    value={employee.penaltyDays.toFixed(2)}
+                    readOnly
+                    className="flex-1 text-center bg-red-50 border-red-200 text-red-800 focus-visible:ring-0"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => adjustPenaltyDays(0.25)}
+                    className={`bg-red-100 border-red-200 text-red-800 hover:bg-red-200 ${isRTL ? "rounded-r-none" : "rounded-l-none"}`}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{summary.baseAttendedDays.toFixed(2)}</div>
+                <div className="text-sm text-muted-foreground">{t("baseAttendedDays")}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600">{summary.absentDays}</div>
+                <div className="text-sm text-muted-foreground">{t("absentDaysCount")}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{summary.totalAdjustedDays.toFixed(2)}</div>
+                <div className="text-sm text-muted-foreground">{t("totalAdjustedDays")}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Fixed footer */}
+        <DialogFooter className="px-4 py-3 border-t bg-background">
+          <Button type="button" onClick={() => setOpen(false)} className="w-full sm:w-auto">
+            {t("save")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
