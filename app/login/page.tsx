@@ -34,7 +34,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-950 p-4">
       <Card className="w-full max-w-sm sm:max-w-md">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-xl sm:text-2xl font-bold">Login to Charlie's Cafe</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl font-bold">Login to Charlie's Cafeeee</CardTitle>
           <CardDescription className="text-sm">Enter your credentials to access the payroll system.</CardDescription>
         </CardHeader>
         <CardContent>
