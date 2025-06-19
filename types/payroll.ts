@@ -3,7 +3,7 @@ export interface Employee {
   firstName: string
   lastName: string
   phone: string
-  role: "barista" | "waiter" | "helper" | "manager" // Updated roles
+  role: "barista" | "waiter" | "captin_order" | "helper" | "steward" | "manager" // Updated roles for analytics/statistics
   baseSalary: number
   attendance: Record<number, number> // day -> hours (0, 0.25, 0.5, 1)
   bonusDays: number // positive adjustments

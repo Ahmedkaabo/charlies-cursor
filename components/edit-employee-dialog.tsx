@@ -167,7 +167,9 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
               <SelectContent>
                 <SelectItem value="barista">{t("barista")}</SelectItem>
                 <SelectItem value="waiter">{t("waiter")}</SelectItem>
+                <SelectItem value="captin_order">{t("captinOrder")}</SelectItem>
                 <SelectItem value="helper">{t("helper")}</SelectItem>
+                <SelectItem value="steward">{t("steward")}</SelectItem>
                 <SelectItem value="manager">{t("manager")}</SelectItem>
               </SelectContent>
             </Select>

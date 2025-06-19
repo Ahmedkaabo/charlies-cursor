@@ -22,11 +22,12 @@ export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExpor
     const colors = {
       waiter: "bg-blue-100 text-blue-800",
       barista: "bg-green-100 text-green-800",
-      chef: "bg-red-100 text-red-800",
-      manager: "bg-purple-100 text-purple-800",
+      captin_order: "bg-pink-100 text-pink-800",
       helper: "bg-yellow-100 text-yellow-800",
+      steward: "bg-orange-100 text-orange-800",
+      manager: "bg-purple-100 text-purple-800",
     }
-    return colors[role]
+    return colors[role] || "bg-gray-100 text-gray-800"
   }
 
   const calculateBaseAttendedDays = (attendance: Record<number, number>) => {

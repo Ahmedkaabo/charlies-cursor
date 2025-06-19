@@ -103,7 +103,7 @@ export default function DashboardPage() {
 
     // Convert to averages
     Object.keys(attendanceByRole).forEach((role) => {
-      attendanceByRole[role] = attendanceByRole[role].total / attendanceByRole[role].count
+      attendanceByRole[role] = attendanceByRole[role].count > 0 ? attendanceByRole[role].total / attendanceByRole[role].count : 0
     })
 
     // Recent activity (employees with low attendance)
@@ -130,7 +130,9 @@ export default function DashboardPage() {
     const colors = {
       waiter: "bg-blue-100 text-blue-800",
       barista: "bg-green-100 text-green-800",
+      captin_order: "bg-pink-100 text-pink-800",
       helper: "bg-yellow-100 text-yellow-800",
+      steward: "bg-orange-100 text-orange-800",
       manager: "bg-purple-100 text-purple-800",
     }
     return colors[role as keyof typeof colors] || "bg-gray-100 text-gray-800"
@@ -304,9 +306,9 @@ export default function DashboardPage() {
                 <div key={role} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Badge className={getRoleBadgeColor(role)}>{t(role)}</Badge>
-                    <span className="text-sm font-medium">{rate.toFixed(1)}%</span>
+                    <span className="text-sm font-medium">{Number(rate).toFixed(1)}%</span>
                   </div>
-                  <Progress value={rate} className="h-2" />
+                  <Progress value={Number(rate)} className="h-2" />
                 </div>
               ))}
             </CardContent>
