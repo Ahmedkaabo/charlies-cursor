@@ -43,6 +43,8 @@ export function AddEmployeeDialog() {
     baseSalary: "",
     startDate: "" as string | Date,
     branchIds: [] as string[],
+    email: "",
+    password: "",
   })
 
   const branchOptions = branches.map((branch) => ({
@@ -62,7 +64,7 @@ export function AddEmployeeDialog() {
       formData.phone.startsWith("01") &&
       formData.phone.length === 11
     ) {
-      addEmployee({
+      const newEmployee: any = {
         firstName: formData.firstName,
         lastName: formData.lastName,
         phone: formData.phone,
@@ -71,7 +73,12 @@ export function AddEmployeeDialog() {
         startDate:
           typeof formData.startDate === "string" ? formData.startDate : format(formData.startDate, "yyyy-MM-dd"),
         branchIds: formData.branchIds,
-      })
+      }
+      if (formData.role === "manager") {
+        if (formData.email) newEmployee.email = formData.email
+        if (formData.password) newEmployee.password = formData.password
+      }
+      addEmployee(newEmployee)
       setFormData({
         firstName: "",
         lastName: "",
@@ -80,6 +87,8 @@ export function AddEmployeeDialog() {
         baseSalary: "",
         startDate: "",
         branchIds: [],
+        email: "",
+        password: "",
       })
       setOpen(false)
     }
@@ -101,9 +110,9 @@ export function AddEmployeeDialog() {
           <DialogDescription>{t("addEmployeeDescription")}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="firstName" className={isRTL ? "text-right" : "text-left"}>
+          <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${isRTL ? "sm:grid-flow-col-dense" : ""}`}>
+            <div className={`${isRTL ? "sm:col-start-2" : ""}`}>
+              <Label htmlFor="firstName" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
                 {t("firstName")}
               </Label>
               <Input
@@ -115,8 +124,8 @@ export function AddEmployeeDialog() {
                 className={isRTL ? "text-right" : "text-left"}
               />
             </div>
-            <div>
-              <Label htmlFor="lastName" className={isRTL ? "text-right" : "text-left"}>
+            <div className={`${isRTL ? "sm:col-start-1" : ""}`}>
+              <Label htmlFor="lastName" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
                 {t("lastName")}
               </Label>
               <Input
@@ -131,7 +140,7 @@ export function AddEmployeeDialog() {
           </div>
 
           <div>
-            <Label htmlFor="phone" className={isRTL ? "text-right" : "text-left"}>
+            <Label htmlFor="phone" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
               {t("phone")}
             </Label>
             <Input
@@ -147,7 +156,7 @@ export function AddEmployeeDialog() {
           </div>
 
           <div>
-            <Label htmlFor="role" className={isRTL ? "text-right" : "text-left"}>
+            <Label htmlFor="role" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
               {t("role")}
             </Label>
             <Select
@@ -169,7 +178,7 @@ export function AddEmployeeDialog() {
           </div>
 
           <div>
-            <Label htmlFor="baseSalary" className={isRTL ? "text-right" : "text-left"}>
+            <Label htmlFor="baseSalary" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
               {t("baseSalary")} ({t("egp")})
             </Label>
             <Input
@@ -184,7 +193,7 @@ export function AddEmployeeDialog() {
           </div>
 
           <div>
-            <Label htmlFor="startDate" className={isRTL ? "text-right" : "text-left"}>
+            <Label htmlFor="startDate" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
               {t("startDate")}
             </Label>
             <Popover>
@@ -213,7 +222,7 @@ export function AddEmployeeDialog() {
           </div>
 
           <div>
-            <Label htmlFor="branches" className={isRTL ? "text-right" : "text-left"}>
+            <Label htmlFor="branches" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
               {t("branches")}
             </Label>
             <MultiSelect
@@ -221,6 +230,7 @@ export function AddEmployeeDialog() {
               selected={formData.branchIds}
               onChange={(selectedBranches) => setFormData((prev) => ({ ...prev, branchIds: selectedBranches }))}
               placeholder={t("selectBranches")}
+              className={isRTL ? "text-right" : "text-left"}
             />
           </div>
 

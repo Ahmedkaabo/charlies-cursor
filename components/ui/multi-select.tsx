@@ -1,13 +1,14 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronDown } from "lucide-react"
+import { Check, ChevronDown, ChevronsUpDown } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
+import { useLanguage } from "@/contexts/language-context"
 
 interface MultiSelectProps {
   options: { label: string; value: string }[]
@@ -18,6 +19,8 @@ interface MultiSelectProps {
 }
 
 export function MultiSelect({ options, selected, onChange, placeholder, className }: MultiSelectProps) {
+  const { language } = useLanguage()
+  const isRTL = language === "ar"
   const [open, setOpen] = React.useState(false)
 
   const handleSelect = (value: string) => {
@@ -32,9 +35,12 @@ export function MultiSelect({ options, selected, onChange, placeholder, classNam
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-full justify-between", className)}
+          className={`w-full justify-between ${
+            selected.length > 0 ? "text-primary" : "text-muted-foreground"
+          } ${isRTL ? "flex-row-reverse" : ""} ${className}`}
+          onClick={() => setOpen(!open)}
         >
-          <div className="flex flex-wrap gap-1">
+          <div className="flex gap-1 flex-wrap">
             {selected.length > 0 ? (
               selected.map((value) => {
                 const option = options.find((opt) => opt.value === value)
@@ -48,10 +54,10 @@ export function MultiSelect({ options, selected, onChange, placeholder, classNam
               <span className="text-muted-foreground">{placeholder || "Select..."}</span>
             )}
           </div>
-          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+      <PopoverContent className="w-full p-0">
         <Command>
           <CommandInput placeholder="Search options..." />
           <CommandList>

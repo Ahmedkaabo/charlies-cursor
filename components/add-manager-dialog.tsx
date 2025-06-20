@@ -102,7 +102,7 @@ export function AddManagerDialog() {
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="firstName" className={isRTL ? "text-right" : "text-left"}>
+              <Label htmlFor="firstName" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
                 {t("firstName")}
               </Label>
               <Input
@@ -115,7 +115,7 @@ export function AddManagerDialog() {
               />
             </div>
             <div>
-              <Label htmlFor="lastName" className={isRTL ? "text-right" : "text-left"}>
+              <Label htmlFor="lastName" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
                 {t("lastName")}
               </Label>
               <Input
@@ -130,7 +130,7 @@ export function AddManagerDialog() {
           </div>
 
           <div>
-            <Label htmlFor="phone" className={isRTL ? "text-right" : "text-left"}>
+            <Label htmlFor="phone" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
               {t("phone")}
             </Label>
             <Input
@@ -146,7 +146,7 @@ export function AddManagerDialog() {
           </div>
 
           <div>
-            <Label htmlFor="baseSalary" className={isRTL ? "text-right" : "text-left"}>
+            <Label htmlFor="baseSalary" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
               {t("baseSalary")} ({t("egp")})
             </Label>
             <Input
@@ -161,7 +161,7 @@ export function AddManagerDialog() {
           </div>
 
           <div>
-            <Label htmlFor="startDate" className={isRTL ? "text-right" : "text-left"}>
+            <Label htmlFor="startDate" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
               {t("startDate")}
             </Label>
             <Popover>
@@ -190,7 +190,7 @@ export function AddManagerDialog() {
           </div>
 
           <div>
-            <Label htmlFor="branches" className={isRTL ? "text-right" : "text-left"}>
+            <Label htmlFor="branches" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
               {t("branches")}
             </Label>
             <MultiSelect
@@ -198,11 +198,12 @@ export function AddManagerDialog() {
               selected={formData.branchIds}
               onChange={(selectedBranches) => setFormData((prev) => ({ ...prev, branchIds: selectedBranches }))}
               placeholder={t("selectBranches")}
+              className={isRTL ? "text-right" : "text-left"}
             />
           </div>
 
           <div>
-            <Label htmlFor="email" className={isRTL ? "text-right" : "text-left"}>
+            <Label htmlFor="email" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
               {t("email")}
             </Label>
             <Input
@@ -216,7 +217,7 @@ export function AddManagerDialog() {
             />
           </div>
           <div>
-            <Label htmlFor="password" className={isRTL ? "text-right" : "text-left"}>
+            <Label htmlFor="password" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
               {t("password")}
             </Label>
             <Input

@@ -82,7 +82,8 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
       formData.phone.startsWith("01") &&
       formData.phone.length === 11
     ) {
-      updateEmployee(employee.id, {
+      // Only include email and password if role is manager and they are provided
+      const updateData: any = {
         firstName: formData.firstName,
         lastName: formData.lastName,
         phone: formData.phone,
@@ -91,9 +92,12 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
         startDate:
           typeof formData.startDate === "string" ? formData.startDate : format(formData.startDate, "yyyy-MM-dd"),
         branchIds: formData.branchIds,
-        email: formData.email,
-        password: formData.password,
-      })
+      }
+      if (formData.role === "manager") {
+        if (formData.email) updateData.email = formData.email
+        if (formData.password) updateData.password = formData.password
+      }
+      updateEmployee(employee.id, updateData)
       onOpenChange(false)
     }
   }
@@ -108,9 +112,9 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
           <DialogDescription>{t("editEmployeeDescription")}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="firstName" className={isRTL ? "text-right" : "text-left"}>
+          <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${isRTL ? "sm:grid-flow-col-dense" : ""}`}>
+            <div className={`${isRTL ? "sm:col-start-2" : ""}`}>
+              <Label htmlFor="firstName" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
                 {t("firstName")}
               </Label>
               <Input
@@ -122,8 +126,8 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
                 className={isRTL ? "text-right" : "text-left"}
               />
             </div>
-            <div>
-              <Label htmlFor="lastName" className={isRTL ? "text-right" : "text-left"}>
+            <div className={`${isRTL ? "sm:col-start-1" : ""}`}>
+              <Label htmlFor="lastName" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
                 {t("lastName")}
               </Label>
               <Input
@@ -138,7 +142,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
           </div>
 
           <div>
-            <Label htmlFor="phone" className={isRTL ? "text-right" : "text-left"}>
+            <Label htmlFor="phone" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
               {t("phone")}
             </Label>
             <Input
@@ -154,7 +158,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
           </div>
 
           <div>
-            <Label htmlFor="role" className={isRTL ? "text-right" : "text-left"}>
+            <Label htmlFor="role" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
               {t("role")}
             </Label>
             <Select
@@ -176,7 +180,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
           </div>
 
           <div>
-            <Label htmlFor="baseSalary" className={isRTL ? "text-right" : "text-left"}>
+            <Label htmlFor="baseSalary" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
               {t("baseSalary")} ({t("egp")})
             </Label>
             <Input
@@ -191,7 +195,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
           </div>
 
           <div>
-            <Label htmlFor="startDate" className={isRTL ? "text-right" : "text-left"}>
+            <Label htmlFor="startDate" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
               {t("startDate")}
             </Label>
             <Popover>
@@ -220,7 +224,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
           </div>
 
           <div>
-            <Label htmlFor="branches" className={isRTL ? "text-right" : "text-left"}>
+            <Label htmlFor="branches" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
               {t("branches")}
             </Label>
             <MultiSelect
@@ -228,13 +232,14 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
               selected={formData.branchIds}
               onChange={(selectedBranches) => setFormData((prev) => ({ ...prev, branchIds: selectedBranches }))}
               placeholder={t("selectBranches")}
+              className={isRTL ? "text-right" : "text-left"}
             />
           </div>
 
           {formData.role === "manager" && (
             <>
               <div>
-                <Label htmlFor="email" className={isRTL ? "text-right" : "text-left"}>
+                <Label htmlFor="email" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
                   {t("email")}
                 </Label>
                 <Input
@@ -248,7 +253,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
                 />
               </div>
               <div>
-                <Label htmlFor="password" className={isRTL ? "text-right" : "text-left"}>
+                <Label htmlFor="password" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
                   {t("password")}
                 </Label>
                 <Input

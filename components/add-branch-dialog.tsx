@@ -57,9 +57,11 @@ export function AddBranchDialog() {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="branchName" className={cn("text-right", isRTL && "text-left")}>
-              {t("branchName")}
-            </Label>
+            <div>
+              <Label htmlFor="branchName" className={`block ${isRTL ? "text-right" : "text-left"}`}>
+                {t("branchName")}
+              </Label>
+            </div>
             <Input
               id="branchName"
               value={branchName}
