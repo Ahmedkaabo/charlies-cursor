@@ -34,8 +34,49 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const ensureDefaultAdmin = async () => {
+    const { data: existingAdmins, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("role", "admin")
+    
+    if (error) {
+      console.error("Error checking for admin users:", error)
+      return
+    }
+
+    // If no admin user exists, create one
+    if (!existingAdmins || existingAdmins.length === 0) {
+      const defaultAdmin: User = {
+        id: uuidv4(),
+        first_name: "Admin",
+        last_name: "User",
+        email: "admin@charlies.com",
+        password: "Medo123!'",
+        branch_ids: [], // Empty array means all branches for admin
+        role: "admin",
+      }
+
+      try {
+        const { error: insertError } = await supabase.from("users").insert([defaultAdmin])
+        if (insertError) {
+          console.error("Failed to create default admin user:", insertError)
+        } else {
+          console.log("Default admin user created")
+          setUsers(prev => [...prev, defaultAdmin])
+        }
+      } catch (err) {
+        console.error("Failed to create default admin user:", err)
+      }
+    }
+  }
+
   useEffect(() => {
-    fetchUsers()
+    const initializeUsers = async () => {
+      await fetchUsers()
+      await ensureDefaultAdmin()
+    }
+    initializeUsers()
   }, [])
 
   const addUser = async (user: Omit<User, "id">) => {

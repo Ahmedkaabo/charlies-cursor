@@ -16,15 +16,19 @@ interface UsersTableProps {
 
 export function UsersTable({ users }: UsersTableProps) {
   const { t, language } = useLanguage()
-  const { branches } = useBranch()
+  const { allBranches } = useBranch()
   const { deleteUser } = useUser()
   const [editingUser, setEditingUser] = useState<User | null>(null)
 
-  const getBranchBadges = (branch_ids: string[] = []) => {
+  const getBranchBadges = (branch_ids: string[] = [], role: string) => {
+    if (role === "admin") {
+      return <Badge variant="default">All Branches</Badge>
+    }
+    
     if (!branch_ids || branch_ids.length === 0) return <Badge variant="outline">No Branches</Badge>
-    if (branches && branch_ids.length === branches.length) return <Badge variant="secondary">All Branches</Badge>
+    if (allBranches && branch_ids.length === allBranches.length) return <Badge variant="secondary">All Branches</Badge>
     return branch_ids.map((id) => {
-      const branch = branches.find((b) => b.id === id)
+      const branch = allBranches.find((b) => b.id === id)
       return branch ? <Badge key={id} variant="secondary">{branch.name}</Badge> : null
     })
   }
@@ -57,7 +61,7 @@ export function UsersTable({ users }: UsersTableProps) {
                 <TableCell>{user.first_name} {user.last_name}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell><Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>{t(user.role)}</Badge></TableCell>
-                <TableCell className="space-x-1">{getBranchBadges(user.branch_ids)}</TableCell>
+                <TableCell className="space-x-1">{getBranchBadges(user.branch_ids, user.role)}</TableCell>
                 <TableCell className="text-right">
                     {user.role !== 'admin' && (
                     <DropdownMenu>

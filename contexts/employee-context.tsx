@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 import { createContext, useContext, useState, useCallback, useEffect } from "react"
 import type { Employee } from "@/types/payroll"
 import { useAuth } from "./auth-context"
@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast"
 
 interface EmployeeContextType {
   employees: Employee[]
+  allEmployees: Employee[] // All employees (for admin use)
   addEmployee: (
     employeeData: Omit<Employee, "id" | "attendance" | "bonusDays" | "penaltyDays" | "month" | "year" | "status"> & {
       email?: string
@@ -25,8 +26,8 @@ interface EmployeeContextType {
 const EmployeeContext = createContext<EmployeeContextType | undefined>(undefined)
 
 export function EmployeeProvider({ children }: { children: React.ReactNode }) {
-  const { isAdmin } = useAuth()
-  const [employees, setEmployees] = useState<Employee[]>([])
+  const { isAdmin, getUserBranches } = useAuth()
+  const [allEmployees, setAllEmployees] = useState<Employee[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   // Load employees from Supabase on mount
@@ -54,7 +55,7 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
             ...emp,
             attendance: typeof emp.attendance === "string" ? JSON.parse(emp.attendance) : emp.attendance || {},
           }))
-          setEmployees(parsedData)
+          setAllEmployees(parsedData)
         }
       } catch (err) {
         console.error("Network or other error:", err)
@@ -69,6 +70,21 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
     }
     fetchEmployees()
   }, [])
+
+  // Filter employees based on user permissions
+  const employees = React.useMemo(() => {
+    if (isAdmin) {
+      // Admin users see all employees
+      return allEmployees
+    }
+    
+    // Manager users only see employees from their assigned branches
+    const userBranchIds = getUserBranches()
+    return allEmployees.filter(employee => {
+      // Check if employee has any branches that match user's assigned branches
+      return employee.branchIds && employee.branchIds.some(branchId => userBranchIds.includes(branchId))
+    })
+  }, [allEmployees, isAdmin, getUserBranches])
 
   const addEmployee = useCallback(
     async (
@@ -105,7 +121,7 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
           })
         } else if (data && data.length > 0) {
           console.log("Successfully added employee:", data[0])
-          setEmployees((prev) => [...prev, data[0]])
+          setAllEmployees((prev) => [...prev, data[0]])
           toast({
             variant: "success",
             title: "Success",
@@ -141,7 +157,7 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
         })
       } else if (data) {
         console.log("Successfully updated employee:", data[0])
-        setEmployees((prev) => prev.map((emp) => (emp.id === id ? { ...emp, ...updates } : emp)))
+        setAllEmployees((prev) => prev.map((emp) => (emp.id === id ? { ...emp, ...updates } : emp)))
         toast({
           variant: "success",
           title: "Success",
@@ -175,7 +191,7 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
         })
       } else {
         console.log("Successfully deleted employee")
-        setEmployees((prev) => prev.filter((emp) => emp.id !== id))
+        setAllEmployees((prev) => prev.filter((emp) => emp.id !== id))
         toast({
           variant: "success",
           title: "Success",
@@ -209,7 +225,7 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
         })
       } else if (data) {
         console.log("Successfully approved employee:", data[0])
-        setEmployees((prev) => prev.map((emp) => (emp.id === id ? { ...emp, status: "approved" } : emp)))
+        setAllEmployees((prev) => prev.map((emp) => (emp.id === id ? { ...emp, status: "approved" } : emp)))
         toast({
           variant: "success",
           title: "Success",
@@ -228,7 +244,15 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <EmployeeContext.Provider
-      value={{ employees, addEmployee, updateEmployee, deleteEmployee, approveEmployee, isLoading }}
+      value={{ 
+        employees, 
+        allEmployees,
+        addEmployee, 
+        updateEmployee, 
+        deleteEmployee, 
+        approveEmployee, 
+        isLoading 
+      }}
     >
       {children}
     </EmployeeContext.Provider>

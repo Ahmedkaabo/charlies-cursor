@@ -1,13 +1,15 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 import { createContext, useContext, useState, useCallback, useEffect } from "react"
 import type { Branch } from "@/types/payroll"
 import { supabase } from "@/lib/supabase"
 import { toast } from "@/hooks/use-toast"
+import { useAuth } from "./auth-context"
 
 interface BranchContextType {
   branches: Branch[]
+  allBranches: Branch[] // All branches (for admin use)
   addBranch: (name: string) => void
   updateBranch: (id: string, updates: Partial<Branch>) => void
   deleteBranch: (id: string) => void
@@ -18,8 +20,9 @@ interface BranchContextType {
 const BranchContext = createContext<BranchContextType | undefined>(undefined)
 
 export function BranchProvider({ children }: { children: React.ReactNode }) {
-  const [branches, setBranches] = useState<Branch[]>([])
+  const [allBranches, setAllBranches] = useState<Branch[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const { currentUser, isAdmin, getUserBranches } = useAuth()
 
   // Load branches from Supabase on mount
   const fetchBranches = useCallback(async () => {
@@ -40,7 +43,7 @@ export function BranchProvider({ children }: { children: React.ReactNode }) {
         })
       } else {
         console.log("Successfully fetched branches:", data)
-        setBranches(data || [])
+        setAllBranches(data || [])
       }
     } catch (err) {
       console.error("Network or other error:", err)
@@ -57,6 +60,20 @@ export function BranchProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetchBranches()
   }, [fetchBranches])
+
+  // Filter branches based on user permissions
+  const branches = React.useMemo(() => {
+    if (!currentUser) return []
+    
+    if (isAdmin) {
+      // Admin users see all branches
+      return allBranches
+    }
+    
+    // Manager users only see their assigned branches
+    const userBranchIds = getUserBranches()
+    return allBranches.filter(branch => userBranchIds.includes(branch.id))
+  }, [allBranches, currentUser, isAdmin, getUserBranches])
 
   const addBranch = useCallback(async (name: string) => {
     console.log("Adding branch:", { name })
@@ -80,7 +97,7 @@ export function BranchProvider({ children }: { children: React.ReactNode }) {
         })
       } else if (data && data.length > 0) {
         console.log("Successfully added branch:", data[0])
-        setBranches((prev) => [...prev, data[0]])
+        setAllBranches((prev) => [...prev, data[0]])
         toast({
           variant: "success",
           title: "Success",
@@ -114,7 +131,7 @@ export function BranchProvider({ children }: { children: React.ReactNode }) {
         })
       } else if (data && data.length > 0) {
         console.log("Successfully updated branch:", data[0])
-        setBranches((prev) => prev.map((branch) => (branch.id === id ? { ...branch, ...updates } : branch)))
+        setAllBranches((prev) => prev.map((branch) => (branch.id === id ? { ...branch, ...updates } : branch)))
         toast({
           variant: "success",
           title: "Success",
@@ -148,7 +165,7 @@ export function BranchProvider({ children }: { children: React.ReactNode }) {
         })
       } else {
         console.log("Successfully deleted branch")
-        setBranches((prev) => prev.filter((branch) => branch.id !== id))
+        setAllBranches((prev) => prev.filter((branch) => branch.id !== id))
         toast({
           variant: "success",
           title: "Success",
@@ -167,7 +184,15 @@ export function BranchProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <BranchContext.Provider
-      value={{ branches, addBranch, updateBranch, deleteBranch, isLoading, refreshBranches: fetchBranches }}
+      value={{ 
+        branches, 
+        allBranches,
+        addBranch, 
+        updateBranch, 
+        deleteBranch, 
+        isLoading, 
+        refreshBranches: fetchBranches 
+      }}
     >
       {children}
     </BranchContext.Provider>

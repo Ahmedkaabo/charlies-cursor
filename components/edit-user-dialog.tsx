@@ -19,7 +19,7 @@ interface EditUserDialogProps {
 
 export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps) {
   const { t, language } = useLanguage()
-  const { branches } = useBranch()
+  const { allBranches } = useBranch()
   const { updateUser } = useUser()
   const [formData, setFormData] = useState<Partial<User>>({})
   const [loading, setLoading] = useState(false)
@@ -38,7 +38,18 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
     }
   }, [user])
 
-  const branchOptions = branches.map((branch) => ({ label: branch.name, value: branch.id }))
+  const branchOptions = allBranches.map((branch) => ({ label: branch.name, value: branch.id }))
+
+  // Update branch_ids when role changes
+  const handleRoleChange = (value: "admin" | "manager") => {
+    if (value === "admin") {
+      // Admin users get access to all branches
+      setFormData(prev => ({ ...prev, role: value, branch_ids: allBranches.map(b => b.id) }))
+    } else {
+      // Manager users keep their current branch assignments or start with none
+      setFormData(prev => ({ ...prev, role: value, branch_ids: prev.branch_ids || [] }))
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -90,7 +101,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
           </div>
           <div>
             <Label htmlFor="role" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>{t("role")}</Label>
-            <Select value={formData.role} onValueChange={(value: "admin" | "manager") => setFormData(prev => ({...prev, role: value}))}>
+            <Select value={formData.role} onValueChange={handleRoleChange}>
                 <SelectTrigger>
                     <SelectValue placeholder={t("selectRole")} />
                 </SelectTrigger>
@@ -101,8 +112,18 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
             </Select>
           </div>
           <div>
-            <Label htmlFor="branches" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>{t("branches")}</Label>
-            <MultiSelect options={branchOptions} selected={formData.branch_ids || []} onChange={(selected) => setFormData((prev) => ({ ...prev, branch_ids: selected }))} placeholder={t("selectBranches")} className={isRTL ? "text-right" : "text-left"}/>
+            <Label htmlFor="branches" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
+              {t("branches")}
+              {formData.role === "admin" && <span className="text-sm text-muted-foreground ml-2">(All branches automatically assigned)</span>}
+            </Label>
+            <MultiSelect 
+              options={branchOptions} 
+              selected={formData.branch_ids || []} 
+              onChange={(selected) => setFormData((prev) => ({ ...prev, branch_ids: selected }))} 
+              placeholder={formData.role === "admin" ? "All branches" : t("selectBranches")} 
+              className={isRTL ? "text-right" : "text-left"}
+              disabled={formData.role === "admin"}
+            />
           </div>
           <DialogFooter className="flex flex-row-reverse justify-end gap-2 sm:flex-row sm:justify-end mt-4">
             <Button type="submit" disabled={loading}>{loading ? t("saving") : t("saveChanges")}</Button>

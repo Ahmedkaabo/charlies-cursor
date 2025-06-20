@@ -29,7 +29,16 @@ export default function LoginPage() {
     )
 
     if (foundUser) {
-      login(foundUser)
+      const authUser = {
+        id: foundUser.id,
+        email: foundUser.email,
+        first_name: foundUser.first_name,
+        last_name: foundUser.last_name,
+        branch_ids: foundUser.branch_ids || [],
+        role: foundUser.role,
+      }
+      
+      login(authUser)
       router.push("/dashboard")
     } else {
       setError("Invalid email or password.")

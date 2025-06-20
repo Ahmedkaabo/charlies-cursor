@@ -8,9 +8,9 @@ type UserRole = "admin" | "manager" | null // Null when not logged in
 export interface AuthUser {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  branchIds: string[];
+  first_name: string;
+  last_name: string;
+  branch_ids: string[];
   role: UserRole;
 }
 
@@ -22,6 +22,7 @@ interface AuthContextType {
   isInitialized: boolean;
   login: (user: AuthUser) => void;
   logout: () => void;
+  getUserBranches: () => string[];
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -35,8 +36,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Initialize auth state from localStorage on mount
     const storedUser = localStorage.getItem("currentUser")
     if (storedUser) {
-      setCurrentUser(JSON.parse(storedUser))
-      setIsLoggedIn(true)
+      try {
+        const user = JSON.parse(storedUser)
+        setCurrentUser(user)
+        setIsLoggedIn(true)
+      } catch (error) {
+        console.error("Failed to parse stored user:", error)
+        localStorage.removeItem("currentUser")
+      }
     }
     setIsInitialized(true)
   }, [])
@@ -53,6 +60,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("currentUser")
   }, [])
 
+  const getUserBranches = useCallback(() => {
+    if (!currentUser) return []
+    
+    // Admin users have access to all branches (represented by empty array or special value)
+    if (currentUser.role === "admin") {
+      return [] // Empty array means all branches
+    }
+    
+    // Manager users only have access to their assigned branches
+    return currentUser.branch_ids || []
+  }, [currentUser])
+
   const isAdmin = currentUser?.role === "admin"
   const isManager = currentUser?.role === "manager"
 
@@ -61,7 +80,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ currentUser, isLoggedIn, isAdmin, isManager, isInitialized, login, logout }}>
+    <AuthContext.Provider value={{ 
+      currentUser, 
+      isLoggedIn, 
+      isAdmin, 
+      isManager, 
+      isInitialized, 
+      login, 
+      logout,
+      getUserBranches 
+    }}>
       {children}
     </AuthContext.Provider>
   )
