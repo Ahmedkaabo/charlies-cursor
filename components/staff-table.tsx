@@ -38,14 +38,15 @@ export function StaffTable({ staff }: StaffTableProps) {
     return colors[role] || "bg-gray-100 text-gray-800"
   }
 
-  const getBranchNames = (branchIds: string[]) => {
+  const getBranchBadges = (branchIds: string[]) => {
+    if (branchIds.length === 0 || branchIds.length === branches.length) {
+      return <Badge variant="secondary">All Branches</Badge>
+    }
     return branchIds
       .map((id) => {
         const branch = branches.find((b) => b.id === id)
-        return branch ? branch.name : ""
+        return branch ? <Badge key={id} variant="secondary">{branch.name}</Badge> : null
       })
-      .filter(Boolean)
-      .join(", ")
   }
 
   const handleEditClick = (employee: Employee) => {
@@ -105,7 +106,7 @@ export function StaffTable({ staff }: StaffTableProps) {
                   {employee.startDate}
                 </TableCell>
                 <TableCell className={`text-sm ${isRTL ? "text-right" : "text-left"}`}>
-                  {getBranchNames(employee.branchIds)}
+                  {getBranchBadges(employee.branchIds)}
                 </TableCell>
                 <TableCell className={isRTL ? "text-right" : "text-left"}>
                   <Badge variant={employee.status === "approved" ? "default" : "destructive"} className="text-xs">

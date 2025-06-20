@@ -1,5 +1,5 @@
-import type React from "react"
-import { useState } from "react"
+import type { User } from "@/contexts/user-context"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -8,59 +8,60 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Plus } from "lucide-react"
-import { useLanguage } from "@/contexts/language-context"
 import { MultiSelect } from "@/components/ui/multi-select"
-import { useBranch } from "@/contexts/branch-context"
-import { useUser } from "@/contexts/user-context"
+import { useLanguage } from "@/contexts/language-context"
 
-export function AddUserDialog() {
+interface EditUserDialogProps {
+  user: User
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSave: (id: string, updates: Partial<User>) => void
+  branches: { id: string; name: string }[]
+}
+
+export function EditUserDialog({ user, open, onOpenChange, onSave, branches }: EditUserDialogProps) {
   const { t, language } = useLanguage()
-  const { branches } = useBranch()
-  const { addUser } = useUser()
-  const [open, setOpen] = useState(false)
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    branchIds: [] as string[],
+    firstName: user.firstName,
+    lastName: user.lastName,
+    password: user.password,
+    branchIds: user.branchIds,
   })
 
+  useEffect(() => {
+    if (open) {
+      setFormData({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        password: user.password,
+        branchIds: user.branchIds,
+      })
+    }
+  }, [user, open])
+
   const branchOptions = branches.map((branch) => ({ label: branch.name, value: branch.id }))
+  const isRTL = language === "ar"
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    addUser({
+    onSave(user.id, {
       firstName: formData.firstName,
       lastName: formData.lastName,
-      email: formData.email,
       password: formData.password,
       branchIds: formData.branchIds,
-      role: "manager",
     })
-    setFormData({ firstName: "", lastName: "", email: "", password: "", branchIds: [] })
-    setOpen(false)
+    onOpenChange(false)
   }
 
-  const isRTL = language === "ar"
-
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          {t("addUser")}
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader className={isRTL ? "text-right" : "text-left"}>
-          <DialogTitle>{t("addUser")}</DialogTitle>
-          <DialogDescription>{t("addUserDescription")}</DialogDescription>
+          <DialogTitle>{t("edit") + " " + t("users")}</DialogTitle>
+          <DialogDescription>{t("edit") + " " + t("users")}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           <div>
@@ -72,7 +73,6 @@ export function AddUserDialog() {
               value={formData.firstName}
               onChange={(e) => setFormData((prev) => ({ ...prev, firstName: e.target.value }))}
               required
-              placeholder={t("firstNamePlaceholder")}
               className={isRTL ? "text-right" : "text-left"}
             />
           </div>
@@ -85,7 +85,6 @@ export function AddUserDialog() {
               value={formData.lastName}
               onChange={(e) => setFormData((prev) => ({ ...prev, lastName: e.target.value }))}
               required
-              placeholder={t("lastNamePlaceholder")}
               className={isRTL ? "text-right" : "text-left"}
             />
           </div>
@@ -95,11 +94,8 @@ export function AddUserDialog() {
             </Label>
             <Input
               id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-              required
-              placeholder="user@example.com"
+              value={user.email}
+              readOnly
               className={isRTL ? "text-right" : "text-left"}
             />
           </div>
@@ -113,7 +109,6 @@ export function AddUserDialog() {
               value={formData.password}
               onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
               required
-              placeholder="********"
               className={isRTL ? "text-right" : "text-left"}
             />
           </div>
@@ -133,7 +128,7 @@ export function AddUserDialog() {
             <Button type="submit" className="flex-grow sm:flex-grow-0">
               {t("save")}
             </Button>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t("cancel")}
             </Button>
           </DialogFooter>

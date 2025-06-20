@@ -5,57 +5,62 @@ import { createContext, useContext, useState, useEffect, useCallback } from "rea
 
 type UserRole = "admin" | "manager" | null // Null when not logged in
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  branchIds: string[];
+  role: UserRole;
+}
+
 interface AuthContextType {
-  role: UserRole
-  isLoggedIn: boolean
-  isAdmin: boolean
-  isManager: boolean
-  login: (role: UserRole) => void
-  logout: () => void
+  currentUser: AuthUser | null;
+  isLoggedIn: boolean;
+  isAdmin: boolean;
+  isManager: boolean;
+  login: (user: AuthUser) => void;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [role, setRole] = useState<UserRole>(null)
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [isInitialized, setIsInitialized] = useState(false) // To prevent hydration mismatch
+  const [isInitialized, setIsInitialized] = useState(false)
 
   useEffect(() => {
     // Initialize auth state from localStorage on mount
-    const storedRole = localStorage.getItem("userRole") as UserRole
-    if (storedRole) {
-      setRole(storedRole)
+    const storedUser = localStorage.getItem("currentUser")
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser))
       setIsLoggedIn(true)
     }
     setIsInitialized(true)
   }, [])
 
-  const login = useCallback((userRole: UserRole) => {
-    setRole(userRole)
+  const login = useCallback((user: AuthUser) => {
+    setCurrentUser(user)
     setIsLoggedIn(true)
-    localStorage.setItem("userRole", userRole || "")
+    localStorage.setItem("currentUser", JSON.stringify(user))
   }, [])
 
   const logout = useCallback(() => {
-    setRole(null)
+    setCurrentUser(null)
     setIsLoggedIn(false)
-    localStorage.removeItem("userRole")
-    // Clear all other local storage data on logout for a clean slate
-    // localStorage.removeItem("employees")
-    // localStorage.removeItem("branches")
+    localStorage.removeItem("currentUser")
   }, [])
 
-  const isAdmin = role === "admin"
-  const isManager = role === "manager"
+  const isAdmin = currentUser?.email === "admin@charlies.com"
+  const isManager = currentUser?.role === "manager"
 
-  // Only render children once auth state is initialized to prevent hydration errors
   if (!isInitialized) {
     return null
   }
 
   return (
-    <AuthContext.Provider value={{ role, isLoggedIn, isAdmin, isManager, login, logout }}>
+    <AuthContext.Provider value={{ currentUser, isLoggedIn, isAdmin, isManager, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

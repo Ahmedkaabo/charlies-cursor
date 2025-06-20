@@ -12,6 +12,7 @@ import { BranchProvider } from "@/contexts/branch-context"
 import { redirect, usePathname } from "next/navigation"
 import { useEffect } from "react"
 import { Toaster } from "@/components/ui/toaster"
+import { UserProvider } from "@/contexts/user-context"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -64,12 +65,14 @@ export default function ClientLayout({
       <body className={inter.className}>
         <LanguageProvider>
           <AuthProvider>
-            <BranchProvider>
-              <EmployeeProvider>
-                <AuthWrapper>{children}</AuthWrapper>
-                <Toaster />
-              </EmployeeProvider>
-            </BranchProvider>
+            <UserProvider>
+              <BranchProvider>
+                <EmployeeProvider>
+                  <AuthWrapper>{children}</AuthWrapper>
+                  <Toaster />
+                </EmployeeProvider>
+              </BranchProvider>
+            </UserProvider>
           </AuthProvider>
         </LanguageProvider>
       </body>

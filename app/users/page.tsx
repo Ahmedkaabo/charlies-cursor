@@ -2,17 +2,15 @@
 
 import { Header } from "@/components/header"
 import { useLanguage } from "@/contexts/language-context"
-import { useEmployee } from "@/contexts/employee-context"
+import { useAuth } from "@/contexts/auth-context"
 import { UsersTable } from "@/components/users-table"
 import { AddUserDialog } from "@/components/add-user-dialog"
-import { useAuth } from "@/contexts/auth-context"
+import { useUser, UserProvider } from "@/contexts/user-context"
 
 export default function UsersPage() {
   const { t } = useLanguage()
-  const { employees } = useEmployee()
+  const { users } = useUser()
   const { isAdmin } = useAuth()
-
-  const users = employees.filter((emp) => emp.email)
 
   return (
     <div className="flex-1 flex flex-col">
@@ -31,3 +29,5 @@ export default function UsersPage() {
     </div>
   )
 }
+
+// If not already wrapped, wrap this page in <UserProvider> at a higher level (e.g., _app or layout).
