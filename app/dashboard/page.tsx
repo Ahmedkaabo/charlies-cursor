@@ -12,7 +12,6 @@ import { useMemo, useEffect } from "react"
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
-import type { Employee } from "@/types/payroll"
 
 export default function DashboardPage() {
   const { t } = useLanguage()
@@ -97,7 +96,7 @@ export default function DashboardPage() {
     )
 
     // Attendance by role
-    const attendanceByRoleRaw = employees.reduce(
+    const attendanceByRole = employees.reduce(
       (acc, emp) => {
         const attendedDays = Object.values(emp.attendance || {}).reduce((sum, val) => sum + val, 0)
         const attendanceRate = (attendedDays / daysInMonth) * 100
@@ -113,10 +112,8 @@ export default function DashboardPage() {
     )
 
     // Convert to averages
-    const attendanceByRole: Record<string, number> = {}
-    Object.keys(attendanceByRoleRaw).forEach((role) => {
-      const roleStats = attendanceByRoleRaw[role]
-      attendanceByRole[role] = roleStats.count > 0 ? (roleStats.total / roleStats.count) : 0
+    Object.keys(attendanceByRole).forEach((role) => {
+      attendanceByRole[role] = attendanceByRole[role].count > 0 ? attendanceByRole[role].total / attendanceByRole[role].count : 0
     })
 
     // Recent activity (employees with low attendance)
@@ -246,8 +243,37 @@ export default function DashboardPage() {
         </div>
 
         {/* Detailed Analytics */}
-        <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-          {/* Staff by Branch */}
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+          {/* Role Distribution */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                {t("staffByRole")}
+              </CardTitle>
+              <CardDescription>{t("distributionOfEmployees")}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {Object.entries(stats.roleDistribution).map(([role, count]) => (
+                <div key={role} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge className={getRoleBadgeColor(role)}>{t(role)}</Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{count}</span>
+                    <div className="w-20 bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full"
+                        style={{ width: `${(count / stats.totalEmployees) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Branch Distribution */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -267,7 +293,7 @@ export default function DashboardPage() {
                     <div className="w-20 bg-gray-200 rounded-full h-2">
                       <div
                         className="bg-green-600 h-2 rounded-full"
-                        style={{ width: `${(Number(count) / stats.totalEmployees) * 100}%` }}
+                        style={{ width: `${(count / stats.totalEmployees) * 100}%` }}
                       ></div>
                     </div>
                   </div>
@@ -297,37 +323,45 @@ export default function DashboardPage() {
               ))}
             </CardContent>
           </Card>
-        </div>
 
-        {/* Low Attendance Alert */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-orange-500" />
-              {t("attendanceAlerts")}
-            </CardTitle>
-            <CardDescription>{t("employeesBelow80")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {stats.recentActivity.length === 0 ? (
-              <div className="flex items-center gap-2 text-green-600">
-                <CheckCircle className="h-5 w-5" />
-                {t("allEmployeesGoodAttendance")}
-              </div>
-            ) : (
-              stats.recentActivity.map((emp: Employee & { attendanceRate: number }) => (
-                <div key={emp.id} className="flex items-center justify-between">
-                  <span className="text-sm font-medium">
-                    {emp.firstName} {emp.lastName}
-                  </span>
-                  <span className="text-sm text-orange-600 font-semibold">
-                    {emp.attendanceRate.toFixed(1)}%
-                  </span>
+          {/* Low Attendance Alert */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-orange-500" />
+                {t("attendanceAlerts")}
+              </CardTitle>
+              <CardDescription>{t("employeesBelow80")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {stats.recentActivity.length === 0 ? (
+                <div className="flex items-center gap-2 text-green-600">
+                  <CheckCircle className="h-4 w-4" />
+                  <span className="text-sm">{t("allEmployeesGoodAttendance")}</span>
                 </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+              ) : (
+                <div className="space-y-3">
+                  {stats.recentActivity.map((emp) => (
+                    <div key={emp.id} className="flex items-center justify-between p-2 bg-orange-50 rounded-lg">
+                      <div>
+                        <p className="text-sm font-medium">
+                          {emp.firstName} {emp.lastName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{t(emp.role)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-orange-600">{emp.attendanceRate.toFixed(1)}%</p>
+                        <p className="text-xs text-muted-foreground">
+                          {emp.attendedDays} {t("days")}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Quick Actions */}
         <Card>
@@ -365,6 +399,16 @@ export default function DashboardPage() {
                 <div>
                   <p className="font-medium">{t("generatePayroll")}</p>
                   <p className="text-xs text-muted-foreground">{t("calculateMonthlySalaries")}</p>
+                </div>
+              </Link>
+              <Link
+                href="/branches"
+                className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+              >
+                <Building2 className="h-8 w-8 text-orange-600" />
+                <div>
+                  <p className="font-medium">{t("manageBranches")}</p>
+                  <p className="text-xs text-muted-foreground">{t("addOrEditLocations")}</p>
                 </div>
               </Link>
             </div>
