@@ -22,7 +22,15 @@ export default function DashboardPage() {
 
   if (!isInitialized) return null
 
-  if (!isAdmin && !isManager) {
+  // If a manager logs in, redirect them to the payroll page.
+  useEffect(() => {
+    if (isManager) {
+      router.replace("/payroll")
+    }
+  }, [isManager, router])
+
+  // Show access denied for anyone who is not an admin.
+  if (!isAdmin) {
     return (
       <div className="flex-1 flex flex-col min-h-screen items-center justify-center">
         <Header />

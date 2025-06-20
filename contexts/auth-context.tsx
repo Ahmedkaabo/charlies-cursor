@@ -35,15 +35,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Initialize auth state from localStorage on mount
     const storedUser = localStorage.getItem("currentUser")
     if (storedUser) {
-      const user = JSON.parse(storedUser)
-      if (user.email !== "admin@charlies.com") {
-        localStorage.removeItem("currentUser")
-        setCurrentUser(null)
-        setIsLoggedIn(false)
-      } else {
-        setCurrentUser(user)
-        setIsLoggedIn(true)
-      }
+      setCurrentUser(JSON.parse(storedUser))
+      setIsLoggedIn(true)
     }
     setIsInitialized(true)
   }, [])
@@ -60,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("currentUser")
   }, [])
 
-  const isAdmin = currentUser?.email === "admin@charlies.com"
+  const isAdmin = currentUser?.role === "admin"
   const isManager = currentUser?.role === "manager"
 
   if (!isInitialized) {

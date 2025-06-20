@@ -16,7 +16,7 @@ import type { Branch } from "@/types/payroll"
 export default function BranchesPage() {
   const { t, language } = useLanguage()
   const { branches, deleteBranch } = useBranch()
-  const { isAdmin } = useAuth()
+  const { isAdmin, isInitialized } = useAuth()
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null)
 
@@ -32,6 +32,20 @@ export default function BranchesPage() {
   }
 
   const isRTL = language === "ar"
+
+  if (!isInitialized) return null
+
+  if (!isAdmin) {
+    return (
+        <div className="flex-1 flex flex-col min-h-screen items-center justify-center">
+            <Header/>
+            <div className="text-center">
+                <h1 className="text-2xl font-bold">Access Denied</h1>
+                <p className="text-muted-foreground">You do not have permission to view this page.</p>
+            </div>
+        </div>
+    )
+  }
 
   return (
     <div className="flex-1 flex flex-col">

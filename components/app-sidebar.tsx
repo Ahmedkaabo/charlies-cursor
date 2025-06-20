@@ -25,10 +25,10 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {} // Def
 export function AppSidebar({ ...props }: AppSidebarProps) {
   // Use the defined props interface
   const { t } = useLanguage()
-  const { isAdmin } = useAuth() // Get isAdmin from auth context
+  const { isAdmin, isManager } = useAuth() // Get user roles
   const { isMobile, setOpenMobile } = useSidebar() // Get isMobile and setOpenMobile
 
-  const navigationItems = [
+  const allNavItems = [
     {
       title: "dashboard",
       url: "/dashboard",
@@ -48,13 +48,21 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
       title: "branches",
       url: "/branches",
       icon: GitBranch,
+      role: "admin", // only for admin
     },
     {
       title: "users",
       url: "/users",
       icon: UserCog,
+      role: "admin", // only for admin
     },
   ]
+
+  const navigationItems = allNavItems.filter(item => {
+    if (isAdmin) return true;
+    if (isManager && (item.title === 'payroll' || item.title === 'staff')) return true;
+    return !item.role; // Show items with no specific role assigned
+  })
 
   const handleMenuItemClick = () => {
     if (isMobile) {

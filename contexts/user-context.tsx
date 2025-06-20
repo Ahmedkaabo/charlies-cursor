@@ -1,13 +1,15 @@
+"use client"
 import React, { createContext, useContext, useState, useEffect } from "react"
+import { v4 as uuidv4 } from "uuid"
 
 export interface User {
   id: string
   firstName: string
-  lastName: string
+  lastName:string
   email: string
   password: string
   branchIds: string[]
-  role: "manager" | "admin"
+  role: "admin" | "manager"
 }
 
 interface UserContextType {
@@ -19,41 +21,54 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
-const DEFAULT_ADMIN_USER: User = {
-  id: "admin-1",
+const ADMIN_USER: User = {
+  id: "3157fc0f-6b43-477a-a6ed-af66865736c6",
   firstName: "Admin",
   lastName: "User",
   email: "admin@charlies.com",
   password: "Medo123!'",
-  branchIds: [], // Will have access to all branches
+  branchIds: [],
   role: "admin",
 }
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<User[]>(() => {
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('users') : null
-    if (stored) return JSON.parse(stored)
-    return [DEFAULT_ADMIN_USER]
+    if (typeof window === 'undefined') {
+      return [ADMIN_USER];
+    }
+    try {
+      const storedUsers = localStorage.getItem("users")
+      if (storedUsers) {
+        const parsedUsers = JSON.parse(storedUsers);
+        // Ensure admin user always exists and is correct
+        const adminExists = parsedUsers.some((u: User) => u.id === ADMIN_USER.id);
+        if (!adminExists) {
+            return [ADMIN_USER, ...parsedUsers.filter((u:User) => u.id !== ADMIN_USER.id)];
+        }
+        return parsedUsers.map((u: User) => u.id === ADMIN_USER.id ? ADMIN_USER : u);
+      }
+    } catch (error) {
+        console.error("Failed to parse users from localStorage", error);
+    }
+    return [ADMIN_USER]
   })
 
   useEffect(() => {
-    localStorage.setItem('users', JSON.stringify(users))
+    localStorage.setItem("users", JSON.stringify(users))
   }, [users])
 
   const addUser = (user: Omit<User, "id">) => {
-    setUsers((prev) => [
-      ...prev,
-      { ...user, id: `user-${Date.now()}` },
-    ])
+    const newUser = { ...user, id: uuidv4() }
+    setUsers((prev) => [...prev, newUser])
   }
 
   const updateUser = (id: string, updates: Partial<User>) => {
-    if (id === DEFAULT_ADMIN_USER.id) return // Prevent editing admin
+    if (id === ADMIN_USER.id) return // Prevent editing admin
     setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...updates } : u)))
   }
 
   const deleteUser = (id: string) => {
-    if (id === DEFAULT_ADMIN_USER.id) return // Prevent deleting admin
+    if (id === ADMIN_USER.id) return // Prevent deleting admin
     setUsers((prev) => prev.filter((u) => u.id !== id))
   }
 
@@ -66,6 +81,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
 export function useUser() {
   const context = useContext(UserContext)
-  if (!context) throw new Error("useUser must be used within a UserProvider")
+  if (!context) {
+    throw new Error("useUser must be used within a UserProvider")
+  }
   return context
 } 
