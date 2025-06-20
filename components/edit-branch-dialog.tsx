@@ -71,8 +71,8 @@ export function EditBranchDialog({ branch, open, onOpenChange }: EditBranchDialo
           <div className="grid grid-cols-4 items-center gap-4">
             <div>
               <Label htmlFor="branchName" className={`block ${isRTL ? "text-right" : "text-left"}`}>
-                {t("branchName")}
-              </Label>
+              {t("branchName")}
+            </Label>
             </div>
             <Input
               id="branchName"

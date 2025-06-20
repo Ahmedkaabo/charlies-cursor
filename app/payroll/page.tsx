@@ -56,6 +56,12 @@ export default function PayrollPage() {
   const router = useRouter()
 
   useEffect(() => {
+    if (!isAdmin && !isManager) {
+      router.replace("/dashboard")
+    }
+  }, [isAdmin, isManager, router])
+
+  useEffect(() => {
     if (branches.length > 0 && !selectedBranch) {
       setSelectedBranch(branches[0])
     }

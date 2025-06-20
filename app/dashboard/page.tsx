@@ -20,6 +20,12 @@ export default function DashboardPage() {
   const { isAdmin } = useAuth()
   const router = useRouter()
 
+  useEffect(() => {
+    if (!isAdmin) {
+      router.replace("/payroll")
+    }
+  }, [isAdmin, router])
+
   const stats = useMemo(() => {
     if (employeesLoading || branchesLoading) {
       return {
