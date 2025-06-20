@@ -39,7 +39,7 @@ export function StaffTable({ staff }: StaffTableProps) {
   }
 
   const getBranchBadges = (branchIds: string[]) => {
-    if (branchIds.length === 0 || branchIds.length === branches.length) {
+    if (branchIds.length === branches.length && branches.length > 0 && branchIds.every(id => branches.some(b => b.id === id))) {
       return <Badge variant="secondary">All Branches</Badge>
     }
     return branchIds

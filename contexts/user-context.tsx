@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react"
+import React, { createContext, useContext, useState, useEffect } from "react"
 
 export interface User {
   id: string
@@ -40,7 +40,15 @@ const TEST_USER: User = {
 }
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const [users, setUsers] = useState<User[]>([DEFAULT_ADMIN_USER, TEST_USER])
+  const [users, setUsers] = useState<User[]>(() => {
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('users') : null
+    if (stored) return JSON.parse(stored)
+    return [DEFAULT_ADMIN_USER, TEST_USER]
+  })
+
+  useEffect(() => {
+    localStorage.setItem('users', JSON.stringify(users))
+  }, [users])
 
   const addUser = (user: Omit<User, "id">) => {
     setUsers((prev) => [

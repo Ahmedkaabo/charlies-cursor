@@ -8,6 +8,7 @@ import { useBranch } from "@/contexts/branch-context"
 import { EditUserDialog } from "./edit-user-dialog"
 import { useUser } from "@/contexts/user-context"
 import { Badge } from "@/components/ui/badge"
+import { AddUserDialog } from "./add-user-dialog"
 
 export interface User {
   id: string
@@ -29,7 +30,7 @@ export function UsersTable({ users }: UsersTableProps) {
   const isRTL = language === "ar"
 
   const getBranchBadges = (branchIds: string[]) => {
-    if (branchIds.length === 0 || branchIds.length === branches.length) {
+    if (branchIds.length === branches.length && branches.length > 0 && branchIds.every(id => branches.some(b => b.id === id))) {
       return <Badge variant="secondary">All Branches</Badge>
     }
     return branchIds
@@ -48,6 +49,9 @@ export function UsersTable({ users }: UsersTableProps) {
 
   return (
     <div className="border rounded-lg overflow-hidden">
+      <div className="flex justify-end p-2">
+        <AddUserDialog />
+      </div>
       <Table>
         <TableHeader>
           <TableRow>
