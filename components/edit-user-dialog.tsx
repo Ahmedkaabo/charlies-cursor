@@ -8,37 +8,56 @@ import { Label } from "@/components/ui/label"
 import { useLanguage } from "@/contexts/language-context"
 import { MultiSelect } from "@/components/ui/multi-select"
 import { useBranch } from "@/contexts/branch-context"
-import { User } from "@/contexts/user-context"
+import { User, useUser } from "@/contexts/user-context"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface EditUserDialogProps {
   user: User
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSave: (updates: Partial<User>) => void
 }
 
-export function EditUserDialog({ user, open, onOpenChange, onSave }: EditUserDialogProps) {
+export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps) {
   const { t, language } = useLanguage()
   const { branches } = useBranch()
+  const { updateUser } = useUser()
   const [formData, setFormData] = useState<Partial<User>>({})
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    setFormData({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        branchIds: user.branchIds,
-        role: user.role,
-    })
+    if (user) {
+        setFormData({
+            first_name: user.first_name,
+            last_name: user.last_name,
+            email: user.email,
+            branch_ids: user.branch_ids || [],
+            role: user.role,
+            password: ""
+        })
+    }
   }, [user])
 
   const branchOptions = branches.map((branch) => ({ label: branch.name, value: branch.id }))
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    onSave(formData)
-    onOpenChange(false)
+    setLoading(true)
+    setError(null)
+    
+    const updates: Partial<User> = { ...formData };
+    if (!updates.password) {
+      delete updates.password;
+    }
+
+    try {
+        await updateUser(user.id, updates)
+        onOpenChange(false)
+    } catch(err: any) {
+        setError(err.message || "An unexpected error occurred.")
+    } finally {
+        setLoading(false)
+    }
   }
 
   const isRTL = language === "ar"
@@ -54,11 +73,11 @@ export function EditUserDialog({ user, open, onOpenChange, onSave }: EditUserDia
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <Label htmlFor="firstName" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>{t("firstName")}</Label>
-                    <Input id="firstName" value={formData.firstName || ''} onChange={(e) => setFormData((prev) => ({ ...prev, firstName: e.target.value }))} required placeholder={t("firstNamePlaceholder")} className={isRTL ? "text-right" : "text-left"} />
+                    <Input id="firstName" value={formData.first_name || ''} onChange={(e) => setFormData((prev) => ({ ...prev, first_name: e.target.value }))} required placeholder={t("firstNamePlaceholder")} className={isRTL ? "text-right" : "text-left"} />
                 </div>
                 <div>
                     <Label htmlFor="lastName" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>{t("lastName")}</Label>
-                    <Input id="lastName" value={formData.lastName || ''} onChange={(e) => setFormData((prev) => ({ ...prev, lastName: e.target.value }))} required placeholder={t("lastNamePlaceholder")} className={isRTL ? "text-right" : "text-left"} />
+                    <Input id="lastName" value={formData.last_name || ''} onChange={(e) => setFormData((prev) => ({ ...prev, last_name: e.target.value }))} required placeholder={t("lastNamePlaceholder")} className={isRTL ? "text-right" : "text-left"} />
                 </div>
             </div>
           <div>
@@ -83,12 +102,13 @@ export function EditUserDialog({ user, open, onOpenChange, onSave }: EditUserDia
           </div>
           <div>
             <Label htmlFor="branches" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>{t("branches")}</Label>
-            <MultiSelect options={branchOptions} selected={formData.branchIds || []} onChange={(selected) => setFormData((prev) => ({ ...prev, branchIds: selected }))} placeholder={t("selectBranches")} className={isRTL ? "text-right" : "text-left"}/>
+            <MultiSelect options={branchOptions} selected={formData.branch_ids || []} onChange={(selected) => setFormData((prev) => ({ ...prev, branch_ids: selected }))} placeholder={t("selectBranches")} className={isRTL ? "text-right" : "text-left"}/>
           </div>
           <DialogFooter className="flex flex-row-reverse justify-end gap-2 sm:flex-row sm:justify-end mt-4">
-            <Button type="submit">{t("saveChanges")}</Button>
+            <Button type="submit" disabled={loading}>{loading ? t("saving") : t("saveChanges")}</Button>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t("cancel")}</Button>
           </DialogFooter>
+          {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
         </form>
       </DialogContent>
     </Dialog>

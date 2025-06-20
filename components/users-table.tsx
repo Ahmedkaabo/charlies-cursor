@@ -17,16 +17,25 @@ interface UsersTableProps {
 export function UsersTable({ users }: UsersTableProps) {
   const { t, language } = useLanguage()
   const { branches } = useBranch()
-  const { deleteUser, updateUser } = useUser()
+  const { deleteUser } = useUser()
   const [editingUser, setEditingUser] = useState<User | null>(null)
 
-  const getBranchBadges = (branchIds: string[] = []) => {
-    if (!branchIds || branchIds.length === 0) return <Badge variant="outline">No Branches</Badge>
-    if (branches && branchIds.length === branches.length) return <Badge variant="secondary">All Branches</Badge>
-    return branchIds.map((id) => {
+  const getBranchBadges = (branch_ids: string[] = []) => {
+    if (!branch_ids || branch_ids.length === 0) return <Badge variant="outline">No Branches</Badge>
+    if (branches && branch_ids.length === branches.length) return <Badge variant="secondary">All Branches</Badge>
+    return branch_ids.map((id) => {
       const branch = branches.find((b) => b.id === id)
       return branch ? <Badge key={id} variant="secondary">{branch.name}</Badge> : null
     })
+  }
+  
+  const handleDelete = async (userId: string) => {
+    try {
+      await deleteUser(userId);
+    } catch (error) {
+      console.error("Failed to delete user", error);
+      // Optionally: add toast notifications for user feedback
+    }
   }
 
   return (
@@ -45,10 +54,10 @@ export function UsersTable({ users }: UsersTableProps) {
             <TableBody>
             {users.map((user) => (
                 <TableRow key={user.id}>
-                <TableCell>{user.firstName} {user.lastName}</TableCell>
+                <TableCell>{user.first_name} {user.last_name}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell><Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>{t(user.role)}</Badge></TableCell>
-                <TableCell className="space-x-1">{getBranchBadges(user.branchIds)}</TableCell>
+                <TableCell className="space-x-1">{getBranchBadges(user.branch_ids)}</TableCell>
                 <TableCell className="text-right">
                     {user.role !== 'admin' && (
                     <DropdownMenu>
@@ -60,7 +69,7 @@ export function UsersTable({ users }: UsersTableProps) {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => setEditingUser(user)}>{t("edit")}</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => deleteUser(user.id)} className="text-red-600">{t("delete")}</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-red-600">{t("delete")}</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                     )}
@@ -75,10 +84,6 @@ export function UsersTable({ users }: UsersTableProps) {
                 user={editingUser}
                 open={!!editingUser}
                 onOpenChange={(open) => !open && setEditingUser(null)}
-                onSave={(updates) => {
-                    updateUser(editingUser.id, updates)
-                    setEditingUser(null)
-                }}
             />
         )}
     </>
