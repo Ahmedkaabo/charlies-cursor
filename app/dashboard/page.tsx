@@ -8,13 +8,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Users, DollarSign, TrendingUp, Building2, Calendar, UserCheck, AlertTriangle, CheckCircle } from "lucide-react"
-import { useMemo } from "react"
+import { useMemo, useEffect } from "react"
 import Link from "next/link"
+import { useAuth } from "@/contexts/auth-context"
+import { useRouter } from "next/navigation"
 
 export default function DashboardPage() {
   const { t } = useLanguage()
   const { employees, isLoading: employeesLoading } = useEmployee()
   const { branches, isLoading: branchesLoading } = useBranch()
+  const { isAdmin } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!isAdmin) {
+      router.replace("/payroll")
+    }
+  }, [isAdmin, router])
 
   const stats = useMemo(() => {
     if (employeesLoading || branchesLoading) {

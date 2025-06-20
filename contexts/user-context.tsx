@@ -43,7 +43,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<User[]>(() => {
     const stored = typeof window !== 'undefined' ? localStorage.getItem('users') : null
     if (stored) return JSON.parse(stored)
-    return [DEFAULT_ADMIN_USER, TEST_USER]
+    return [DEFAULT_ADMIN_USER]
   })
 
   useEffect(() => {

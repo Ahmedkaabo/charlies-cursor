@@ -49,9 +49,6 @@ export function UsersTable({ users }: UsersTableProps) {
 
   return (
     <div className="border rounded-lg overflow-hidden">
-      <div className="flex justify-end p-2">
-        <AddUserDialog />
-      </div>
       <Table>
         <TableHeader>
           <TableRow>

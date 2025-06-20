@@ -44,6 +44,7 @@ export function EditUserDialog({ user, open, onOpenChange, onSave, branches }: E
 
   const branchOptions = branches.map((branch) => ({ label: branch.name, value: branch.id }))
   const isRTL = language === "ar"
+  const isAdminUser = user.email === "admin@charlies.com"
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -74,6 +75,7 @@ export function EditUserDialog({ user, open, onOpenChange, onSave, branches }: E
               onChange={(e) => setFormData((prev) => ({ ...prev, firstName: e.target.value }))}
               required
               className={isRTL ? "text-right" : "text-left"}
+              disabled={isAdminUser}
             />
           </div>
           <div>
@@ -86,6 +88,7 @@ export function EditUserDialog({ user, open, onOpenChange, onSave, branches }: E
               onChange={(e) => setFormData((prev) => ({ ...prev, lastName: e.target.value }))}
               required
               className={isRTL ? "text-right" : "text-left"}
+              disabled={isAdminUser}
             />
           </div>
           <div>
@@ -97,6 +100,7 @@ export function EditUserDialog({ user, open, onOpenChange, onSave, branches }: E
               value={user.email}
               readOnly
               className={isRTL ? "text-right" : "text-left"}
+              disabled={isAdminUser}
             />
           </div>
           <div>
@@ -110,6 +114,7 @@ export function EditUserDialog({ user, open, onOpenChange, onSave, branches }: E
               onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
               required
               className={isRTL ? "text-right" : "text-left"}
+              disabled={isAdminUser}
             />
           </div>
           <div>
@@ -122,10 +127,11 @@ export function EditUserDialog({ user, open, onOpenChange, onSave, branches }: E
               onChange={(selected) => setFormData((prev) => ({ ...prev, branchIds: selected }))}
               placeholder={t("selectBranches")}
               className={isRTL ? "text-right" : "text-left"}
+              disabled={isAdminUser}
             />
           </div>
           <DialogFooter className="flex flex-row-reverse justify-end gap-2 sm:flex-row sm:justify-end">
-            <Button type="submit" className="flex-grow sm:flex-grow-0">
+            <Button type="submit" className="flex-grow sm:flex-grow-0" disabled={isAdminUser}>
               {t("save")}
             </Button>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

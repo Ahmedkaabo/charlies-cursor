@@ -16,14 +16,16 @@ interface MultiSelectProps {
   onChange: (value: string[]) => void
   placeholder?: string
   className?: string
+  disabled?: boolean
 }
 
-export function MultiSelect({ options, selected, onChange, placeholder, className }: MultiSelectProps) {
+export function MultiSelect({ options, selected, onChange, placeholder, className, disabled }: MultiSelectProps) {
   const { language } = useLanguage()
   const isRTL = language === "ar"
   const [open, setOpen] = React.useState(false)
 
   const handleSelect = (value: string) => {
+    if (disabled) return;
     const newSelected = selected.includes(value) ? selected.filter((item) => item !== value) : [...selected, value]
     onChange(newSelected)
   }
@@ -35,10 +37,12 @@ export function MultiSelect({ options, selected, onChange, placeholder, classNam
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          aria-disabled={disabled}
+          disabled={disabled}
           className={`w-full justify-between ${
             selected.length > 0 ? "text-primary" : "text-muted-foreground"
-          } ${isRTL ? "flex-row-reverse" : ""} ${className}`}
-          onClick={() => setOpen(!open)}
+          } ${isRTL ? "flex-row-reverse" : ""} ${className} ${disabled ? "pointer-events-none opacity-50" : ""}`}
+          onClick={() => !disabled && setOpen(!open)}
         >
           <div className="flex gap-1 flex-wrap">
             {selected.length > 0 ? (
@@ -57,24 +61,26 @@ export function MultiSelect({ options, selected, onChange, placeholder, classNam
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
-        <Command>
-          <CommandInput placeholder="Search options..." />
-          <CommandList>
-            <CommandEmpty>No options found.</CommandEmpty>
-            <CommandGroup>
-              {options.map((option) => (
-                <CommandItem key={option.value} onSelect={() => handleSelect(option.value)}>
-                  <Check
-                    className={cn("mr-2 h-4 w-4", selected.includes(option.value) ? "opacity-100" : "opacity-0")}
-                  />
-                  {option.label}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
+      {!disabled && (
+        <PopoverContent className="w-full p-0">
+          <Command>
+            <CommandInput placeholder="Search options..." />
+            <CommandList>
+              <CommandEmpty>No options found.</CommandEmpty>
+              <CommandGroup>
+                {options.map((option) => (
+                  <CommandItem key={option.value} onSelect={() => handleSelect(option.value)}>
+                    <Check
+                      className={cn("mr-2 h-4 w-4", selected.includes(option.value) ? "opacity-100" : "opacity-0")}
+                    />
+                    {option.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      )}
     </Popover>
   )
 }

@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button"
 import { ChevronDown } from "lucide-react"
 import { BulkAttendanceDialog } from "@/components/bulk-attendance-dialog"
 import { Download } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
+import { useRouter } from "next/navigation"
 
 const months = [
   "January",
@@ -50,7 +52,14 @@ export default function PayrollPage() {
   const [selectedBranch, setSelectedBranch] = useState<Branch | undefined>(undefined)
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
-  const [isAdmin, setIsAdmin] = useState(true) // Mock admin state
+  const { isAdmin, isManager } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!isAdmin && !isManager) {
+      router.replace("/dashboard")
+    }
+  }, [isAdmin, isManager, router])
 
   useEffect(() => {
     if (branches.length > 0 && !selectedBranch) {

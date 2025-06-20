@@ -22,7 +22,7 @@ export default function UsersPage() {
         {/* Added padding to content below header */}
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">{t("users")}</h1>
-          {isAdmin && <AddUserDialog />}
+          <AddUserDialog />
         </div>
         <UsersTable users={users} />
       </div>
