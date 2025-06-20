@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { MoreHorizontal } from "lucide-react"
 import { EditEmployeeDialog } from "./edit-employee-dialog"
 import { useState } from "react"
+import { formatSalary } from "@/lib/utils"
 
 interface ManagersTableProps {
   managers: Employee[]
@@ -44,8 +45,8 @@ export function ManagersTable({ managers }: ManagersTableProps) {
     approveEmployee(employeeId)
   }
 
-  const getRoleBadgeColor = (role: Employee["role"]) => {
-    const colors = {
+  const getRoleBadgeColor = (role: string) => {
+    const colors: { [key: string]: string } = {
       waiter: "bg-blue-100 text-blue-800",
       barista: "bg-green-100 text-green-800",
       captin_order: "bg-pink-100 text-pink-800",
@@ -63,25 +64,46 @@ export function ManagersTable({ managers }: ManagersTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className={isRTL ? "text-right" : "text-left"}>{t("firstName")}</TableHead>
-            <TableHead className={isRTL ? "text-right" : "text-left"}>{t("lastName")}</TableHead>
-            <TableHead className={isRTL ? "text-right" : "text-left"}>{t("email")}</TableHead>
-            <TableHead className={isRTL ? "text-right" : "text-left"}>{t("branches")}</TableHead>
+            <TableHead
+              className={`min-w-[180px] sticky ${isRTL ? "right-0" : "left-0"} bg-background z-10 ${
+                isRTL ? "text-right" : "text-left"
+              }`}
+            >
+              {t("employeeName")}
+            </TableHead>
+            <TableHead className={isRTL ? "text-right" : "text-left"}>{t("baseSalary")}</TableHead>
+            <TableHead className={isRTL ? "text-right" : "text-left"}>{t("role")}</TableHead>
             <TableHead className={isRTL ? "text-right" : "text-left"}>{t("status")}</TableHead>
-            <TableHead className={isRTL ? "text-left" : "text-right"}>{t("actions")}</TableHead>
+            <TableHead className={`text-center ${isRTL ? "text-left" : "text-right"}`}>{t("actions")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {managers.map((manager) => (
             <TableRow key={manager.id}>
-              <TableCell className={`font-medium ${isRTL ? "text-right" : "text-left"}`}>{manager.firstName}</TableCell>
-              <TableCell className={isRTL ? "text-right" : "text-left"}>{manager.lastName}</TableCell>
-              <TableCell className={isRTL ? "text-right" : "text-left"}>{manager.email}</TableCell>
-              <TableCell className={isRTL ? "text-right" : "text-left"}>{getBranchNames(manager.branchIds)}</TableCell>
-              <TableCell className={isRTL ? "text-right" : "text-left"}>
-                <Badge className={`${getRoleBadgeColor(manager.role)} text-xs`}>{t(manager.role)}</Badge>
+              <TableCell
+                className={`font-medium sticky ${isRTL ? "right-0" : "left-0"} bg-background z-10 ${
+                  isRTL ? "text-right" : "text-left"
+                }`}
+              >
+                <div className="min-w-[180px] whitespace-nowrap">
+                  <div className="font-semibold text-sm sm:text-base">{`${manager.firstName} ${manager.lastName}`}</div>
+                  {manager.phone && <div className="text-xs sm:text-sm text-muted-foreground">{manager.phone}</div>}
+                </div>
               </TableCell>
-              <TableCell className={isRTL ? "text-left" : "text-right"}>
+              <TableCell className={`text-sm whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
+                {formatSalary(manager.baseSalary)} {t("egp")}
+              </TableCell>
+              <TableCell className={isRTL ? "text-right" : "text-left"}>
+                <Badge className={`${getRoleBadgeColor(manager.role)} text-xs whitespace-nowrap`}>
+                  {t(manager.role)}
+                </Badge>
+              </TableCell>
+              <TableCell className={isRTL ? "text-right" : "text-left"}>
+                <Badge variant={manager.status === "approved" ? "default" : "destructive"} className="text-xs">
+                  {t(manager.status)}
+                </Badge>
+              </TableCell>
+              <TableCell className={`text-center ${isRTL ? "text-left" : "text-right"}`}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0">

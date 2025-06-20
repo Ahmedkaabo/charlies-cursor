@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import type { Employee } from "@/types/payroll"
+import { formatSalary } from "@/lib/utils"
 import { AttendanceDialog } from "./attendance-dialog"
 
 interface PayrollTableProps {
@@ -18,8 +19,8 @@ export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExpor
   const { t, language } = useLanguage()
   const { isAdmin } = useAuth()
 
-  const getRoleBadgeColor = (role: Employee["role"]) => {
-    const colors = {
+  const getRoleBadgeColor = (role: string) => {
+    const colors: { [key: string]: string } = {
       waiter: "bg-blue-100 text-blue-800",
       barista: "bg-green-100 text-green-800",
       captin_order: "bg-pink-100 text-pink-800",
@@ -50,42 +51,38 @@ export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExpor
             <TableHeader>
               <TableRow>
                 <TableHead
-                  className={`min-w-[200px] sticky ${isRTL ? "right-0" : "left-0"} bg-background z-10 ${isRTL ? "text-right" : "text-left"}`}
+                  className={`min-w-[180px] sticky ${isRTL ? "right-0" : "left-0"} bg-background z-10 ${
+                    isRTL ? "text-right" : "text-left"
+                  }`}
                 >
-                  {t("resourceName")}
+                  {t("employeeName")}
                 </TableHead>
-                <TableHead className={`min-w-[100px] ${isRTL ? "text-right" : "text-left"}`}>{t("role")}</TableHead>
-                <TableHead className={`min-w-[150px] ${isRTL ? "text-right" : "text-left"}`}>
-                  {t("attendance")}
-                </TableHead>
-                <TableHead className={`min-w-[100px] ${isRTL ? "text-right" : "text-left"}`}>
-                  {t("totalDays")}
-                </TableHead>
-                <TableHead className={`min-w-[120px] ${isRTL ? "text-right" : "text-left"}`}>
-                  {t("bonusPenalty")}
-                </TableHead>
-                <TableHead className={`min-w-[120px] ${isRTL ? "text-right" : "text-left"}`}>
-                  {t("finalSalary")}
-                </TableHead>
+                <TableHead className={isRTL ? "text-right" : "text-left"}>{t("role")}</TableHead>
+                <TableHead className={isRTL ? "text-right" : "text-left"}>{t("attendance")}</TableHead>
+                <TableHead className={isRTL ? "text-right" : "text-left"}>{t("totalDays")}</TableHead>
+                <TableHead className={isRTL ? "text-right" : "text-left"}>{t("bonusPenalty")}</TableHead>
+                <TableHead className={isRTL ? "text-right" : "text-left"}>{t("finalSalary")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {employees.map((employee) => (
                 <TableRow key={employee.id}>
                   <TableCell
-                    className={`font-medium sticky ${isRTL ? "right-0" : "left-0"} bg-background z-10 ${isRTL ? "text-right" : "text-left"}`}
+                    className={`font-medium sticky ${isRTL ? "right-0" : "left-0"} bg-background z-10 ${
+                      isRTL ? "text-right" : "text-left"
+                    }`}
                   >
-                    <div className="min-w-[180px]">
+                    <div className="min-w-[180px] whitespace-nowrap">
                       <div className="font-semibold text-sm sm:text-base">
                         {employee.firstName} {employee.lastName}
                       </div>
-                      {employee.phone && (
-                        <div className="text-xs sm:text-sm text-muted-foreground">{employee.phone}</div>
-                      )}
+                      {employee.phone && <div className="text-xs sm:text-sm text-muted-foreground">{employee.phone}</div>}
                     </div>
                   </TableCell>
                   <TableCell className={isRTL ? "text-right" : "text-left"}>
-                    <Badge className={`${getRoleBadgeColor(employee.role)} text-xs`}>{t(employee.role)}</Badge>
+                    <Badge className={`${getRoleBadgeColor(employee.role)} text-xs whitespace-nowrap`}>
+                      {t(employee.role)}
+                    </Badge>
                   </TableCell>
                   <TableCell className={isRTL ? "text-right" : "text-left"}>
                     <AttendanceDialog
@@ -95,19 +92,17 @@ export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExpor
                       onEmployeeUpdate={onEmployeeUpdate}
                     />
                   </TableCell>
-                  <TableCell className={`font-semibold text-sm ${isRTL ? "text-right" : "text-left"}`}>
+                  <TableCell className={`font-semibold text-sm whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
                     {calculateBaseAttendedDays(employee.attendance).toFixed(2)}
                   </TableCell>
-                  <TableCell className={isRTL ? "text-right" : "text-left"}>
-                    <div className="text-sm">
-                      {employee.bonusDays > 0 && `+${employee.bonusDays.toFixed(2)}`}
-                      {employee.bonusDays > 0 && employee.penaltyDays > 0 && " / "}
-                      {employee.penaltyDays > 0 && `-${employee.penaltyDays.toFixed(2)}`}
-                      {employee.bonusDays === 0 && employee.penaltyDays === 0 && "0.00"}
+                  <TableCell className={`font-semibold text-sm whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
+                    <div className="flex flex-col">
+                      <span className="text-green-600">+{employee.bonusDays}</span>
+                      <span className="text-red-600">-{employee.penaltyDays}</span>
                     </div>
                   </TableCell>
-                  <TableCell className={`font-semibold text-sm ${isRTL ? "text-right" : "text-left"}`}>
-                    {calculateFinalSalary(employee).toFixed(2)} {t("egp")}
+                  <TableCell className={`font-semibold text-sm whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
+                    {formatSalary(calculateFinalSalary(employee))} {t("egp")}
                   </TableCell>
                 </TableRow>
               ))}

@@ -231,11 +231,13 @@ export function AddManagerDialog() {
             />
           </div>
 
-          <DialogFooter className={isRTL ? "flex-row-reverse" : "flex-row"}>
+          <DialogFooter className="flex flex-row-reverse justify-end gap-2 sm:flex-row sm:justify-end">
+            <Button type="submit" className="flex-grow sm:flex-grow-0">
+              {t("save")}
+            </Button>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               {t("cancel")}
             </Button>
-            <Button type="submit">{t("save")}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

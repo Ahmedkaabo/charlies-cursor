@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { MoreHorizontal } from "lucide-react"
 import { EditEmployeeDialog } from "./edit-employee-dialog"
 import { useState } from "react"
+import { formatSalary } from "@/lib/utils"
 
 interface StaffTableProps {
   staff: Employee[]
@@ -25,8 +26,8 @@ export function StaffTable({ staff }: StaffTableProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
 
-  const getRoleBadgeColor = (role: Employee["role"]) => {
-    const colors = {
+  const getRoleBadgeColor = (role: string) => {
+    const colors: { [key: string]: string } = {
       waiter: "bg-blue-100 text-blue-800",
       barista: "bg-green-100 text-green-800",
       captin_order: "bg-pink-100 text-pink-800",
@@ -91,12 +92,18 @@ export function StaffTable({ staff }: StaffTableProps) {
                   </div>
                 </TableCell>
                 <TableCell className={isRTL ? "text-right" : "text-left"}>
-                  <Badge className={`${getRoleBadgeColor(employee.role)} text-xs`}>{t(employee.role)}</Badge>
+                  <Badge
+                    className={`${getRoleBadgeColor(employee.role)} text-xs whitespace-nowrap`}
+                  >
+                    {t(employee.role)}
+                  </Badge>
                 </TableCell>
-                <TableCell className={`text-sm ${isRTL ? "text-right" : "text-left"}`}>
-                  {employee.baseSalary.toFixed(2)} {t("egp")}
+                <TableCell className={`text-sm whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
+                  {formatSalary(employee.baseSalary)} {t("egp")}
                 </TableCell>
-                <TableCell className={`text-sm ${isRTL ? "text-right" : "text-left"}`}>{employee.startDate}</TableCell>
+                <TableCell className={`text-sm whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
+                  {employee.startDate}
+                </TableCell>
                 <TableCell className={`text-sm ${isRTL ? "text-right" : "text-left"}`}>
                   {getBranchNames(employee.branchIds)}
                 </TableCell>
