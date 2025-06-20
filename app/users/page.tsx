@@ -3,16 +3,16 @@
 import { Header } from "@/components/header"
 import { useLanguage } from "@/contexts/language-context"
 import { useEmployee } from "@/contexts/employee-context"
-import { ManagersTable } from "@/components/managers-table"
-import { AddManagerDialog } from "@/components/add-manager-dialog"
+import { UsersTable } from "@/components/users-table"
+import { AddUserDialog } from "@/components/add-user-dialog"
 import { useAuth } from "@/contexts/auth-context"
 
-export default function ManagersPage() {
+export default function UsersPage() {
   const { t } = useLanguage()
   const { employees } = useEmployee()
   const { isAdmin } = useAuth()
 
-  const managers = employees.filter((emp) => emp.role === "manager")
+  const users = employees.filter((emp) => emp.email)
 
   return (
     <div className="flex-1 flex flex-col">
@@ -23,10 +23,10 @@ export default function ManagersPage() {
         {" "}
         {/* Added padding to content below header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">{t("managers")}</h1>
-          {isAdmin && <AddManagerDialog />}
+          <h1 className="text-3xl font-bold tracking-tight">{t("users")}</h1>
+          {isAdmin && <AddUserDialog />}
         </div>
-        <ManagersTable managers={managers} />
+        <UsersTable users={users} />
       </div>
     </div>
   )

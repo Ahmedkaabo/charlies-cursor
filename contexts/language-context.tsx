@@ -59,7 +59,9 @@ const translations = {
     phonePlaceholder: "01XXXXXXXXX",
     baseSalaryPlaceholder: "3000",
     pickADate: "Pick a date",
-    managers: "Managers",
+    users: "Users",
+    addUser: "Add User",
+    addUserDescription: "Add a new user to the system and assign login credentials.",
     email: "Email",
     password: "Password",
     editBranch: "Edit Branch",
@@ -178,7 +180,9 @@ const translations = {
     phonePlaceholder: "01XXXXXXXXX",
     baseSalaryPlaceholder: "3000",
     pickADate: "اختر تاريخًا",
-    managers: "المدراء",
+    users: "المستخدمون",
+    addUser: "إضافة مستخدم",
+    addUserDescription: "أضف مستخدمًا جديدًا إلى النظام وقم بتعيين بيانات اعتماد تسجيل الدخول.",
     email: "البريد الإلكتروني",
     password: "كلمة المرور",
     editBranch: "تعديل الفرع",
@@ -254,7 +258,7 @@ const translations = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>("ar")
+  const [language, setLanguage] = useState<Language>("en")
 
   const t = (key: string): string => {
     return translations[language][key as keyof (typeof translations)["en"]] || key

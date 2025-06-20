@@ -50,8 +50,8 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
       icon: GitBranch,
     },
     {
-      title: "managers",
-      url: "/managers",
+      title: "users",
+      url: "/users",
       icon: UserCog,
     },
   ]
