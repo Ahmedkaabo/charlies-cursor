@@ -66,12 +66,12 @@ export default function ClientLayout({
         <LanguageProvider>
           <AuthProvider>
             <UserProvider>
-            <BranchProvider>
-              <EmployeeProvider>
-                <AuthWrapper>{children}</AuthWrapper>
-                <Toaster />
-              </EmployeeProvider>
-            </BranchProvider>
+              <BranchProvider>
+                <EmployeeProvider>
+                  <AuthWrapper>{children}</AuthWrapper>
+                  <Toaster />
+                </EmployeeProvider>
+              </BranchProvider>
             </UserProvider>
           </AuthProvider>
         </LanguageProvider>

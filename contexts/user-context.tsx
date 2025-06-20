@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react"
-import { supabase } from "@/lib/supabase"
+import React, { createContext, useContext, useState, useEffect } from "react"
 
 export interface User {
   id: string
@@ -13,10 +12,9 @@ export interface User {
 
 interface UserContextType {
   users: User[]
-  addUser: (user: Omit<User, "id">) => Promise<void>
-  updateUser: (id: string, updates: Partial<User>) => Promise<void>
-  deleteUser: (id: string) => Promise<void>
-  isLoading: boolean
+  addUser: (user: Omit<User, "id">) => void
+  updateUser: (id: string, updates: Partial<User>) => void
+  deleteUser: (id: string) => void
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -31,69 +29,36 @@ const DEFAULT_ADMIN_USER: User = {
   role: "admin",
 }
 
-const TEST_USER: User = {
-  id: "user-omar",
-  firstName: "Omar",
-  lastName: "Mohamed",
-  email: "omar@charlies.com",
-  password: "test123",
-  branchIds: ["branch-1", "branch-2"],
-  role: "manager",
-}
-
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const [users, setUsers] = useState<User[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [users, setUsers] = useState<User[]>(() => {
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('users') : null
+    if (stored) return JSON.parse(stored)
+    return [DEFAULT_ADMIN_USER]
+  })
 
-  // Fetch users from Supabase on mount
   useEffect(() => {
-    const fetchUsers = async () => {
-      setIsLoading(true)
-      const { data, error } = await supabase.from("users").select("*")
-      if (error) {
-        console.error("Error fetching users:", error)
-        setUsers([])
-      } else {
-        setUsers(data || [])
-      }
-      setIsLoading(false)
-    }
-    fetchUsers()
-  }, [])
+    localStorage.setItem('users', JSON.stringify(users))
+  }, [users])
 
-  const addUser = useCallback(async (user: Omit<User, "id">) => {
-    const { data, error } = await supabase.from("users").insert([user]).select()
-    if (error) {
-      console.error("Error adding user:", error)
-      return
-    }
-    if (data && data.length > 0) {
-      setUsers((prev) => [...prev, data[0]])
-    }
-  }, [])
+  const addUser = (user: Omit<User, "id">) => {
+    setUsers((prev) => [
+      ...prev,
+      { ...user, id: `user-${Date.now()}` },
+    ])
+  }
 
-  const updateUser = useCallback(async (id: string, updates: Partial<User>) => {
-    const { data, error } = await supabase.from("users").update(updates).eq("id", id).select()
-    if (error) {
-      console.error("Error updating user:", error)
-      return
-    }
-    if (data && data.length > 0) {
-      setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...data[0] } : u)))
-    }
-  }, [])
+  const updateUser = (id: string, updates: Partial<User>) => {
+    if (id === DEFAULT_ADMIN_USER.id) return // Prevent editing admin
+    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...updates } : u)))
+  }
 
-  const deleteUser = useCallback(async (id: string) => {
-    const { error } = await supabase.from("users").delete().eq("id", id)
-    if (error) {
-      console.error("Error deleting user:", error)
-      return
-    }
+  const deleteUser = (id: string) => {
+    if (id === DEFAULT_ADMIN_USER.id) return // Prevent deleting admin
     setUsers((prev) => prev.filter((u) => u.id !== id))
-  }, [])
+  }
 
   return (
-    <UserContext.Provider value={{ users, addUser, updateUser, deleteUser, isLoading }}>
+    <UserContext.Provider value={{ users, addUser, updateUser, deleteUser }}>
       {children}
     </UserContext.Provider>
   )

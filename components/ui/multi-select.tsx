@@ -63,23 +63,23 @@ export function MultiSelect({ options, selected, onChange, placeholder, classNam
       </PopoverTrigger>
       {!disabled && (
         <PopoverContent className="w-full p-0">
-        <Command>
-          <CommandInput placeholder="Search options..." />
-          <CommandList>
-            <CommandEmpty>No options found.</CommandEmpty>
-            <CommandGroup>
-              {options.map((option) => (
-                <CommandItem key={option.value} onSelect={() => handleSelect(option.value)}>
-                  <Check
-                    className={cn("mr-2 h-4 w-4", selected.includes(option.value) ? "opacity-100" : "opacity-0")}
-                  />
-                  {option.label}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
+          <Command>
+            <CommandInput placeholder="Search options..." />
+            <CommandList>
+              <CommandEmpty>No options found.</CommandEmpty>
+              <CommandGroup>
+                {options.map((option) => (
+                  <CommandItem key={option.value} onSelect={() => handleSelect(option.value)}>
+                    <Check
+                      className={cn("mr-2 h-4 w-4", selected.includes(option.value) ? "opacity-100" : "opacity-0")}
+                    />
+                    {option.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
       )}
     </Popover>
   )

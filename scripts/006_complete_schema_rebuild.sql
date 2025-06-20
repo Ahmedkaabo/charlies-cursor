@@ -3,7 +3,6 @@
 -- Drop all existing tables to start fresh
 DROP TABLE IF EXISTS employees CASCADE;
 DROP TABLE IF EXISTS branches CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
 
 -- Recreate branches table with correct structure
 CREATE TABLE branches (
@@ -32,18 +31,6 @@ CREATE TABLE employees (
   email TEXT,
   password TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Recreate users table with correct structure
-CREATE TABLE IF NOT EXISTS users (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  first_name text NOT NULL,
-  last_name text NOT NULL,
-  email text NOT NULL UNIQUE,
-  password text NOT NULL,
-  role text NOT NULL CHECK (role IN ('admin', 'manager')),
-  branch_ids uuid[] NOT NULL DEFAULT '{}',
-  created_at timestamp with time zone DEFAULT now()
 );
 
 -- Disable Row Level Security for demo purposes

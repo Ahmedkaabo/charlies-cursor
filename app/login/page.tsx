@@ -23,10 +23,17 @@ export default function LoginPage() {
     setError("")
 
     if (email === "admin@charlies.com" && password === "Medo123!'") {
-      login("admin")
+      login({
+        id: "admin-1",
+        firstName: "Admin",
+        lastName: "User",
+        email: "admin@charlies.com",
+        branchIds: [],
+        role: "admin"
+      })
       router.push("/dashboard")
     } else {
-      setError("Invalid email or password.")
+      setError("Invalid email or password. Only the admin account is allowed.")
     }
   }
 
@@ -38,6 +45,11 @@ export default function LoginPage() {
           <CardDescription className="text-sm">Enter your credentials to access the payroll system.</CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="mb-4 p-3 rounded bg-gray-50 border text-xs text-gray-700">
+            <div><b>Admin Login:</b></div>
+            <div>Email: <span className="font-mono">admin@charlies.com</span></div>
+            <div>Password: <span className="font-mono">Medo123!'</span></div>
+          </div>
           <form onSubmit={handleLogin} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email" className="text-sm">

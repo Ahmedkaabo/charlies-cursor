@@ -19,6 +19,7 @@ interface AuthContextType {
   isLoggedIn: boolean;
   isAdmin: boolean;
   isManager: boolean;
+  isInitialized: boolean;
   login: (user: AuthUser) => void;
   logout: () => void;
 }
@@ -34,8 +35,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Initialize auth state from localStorage on mount
     const storedUser = localStorage.getItem("currentUser")
     if (storedUser) {
-      setCurrentUser(JSON.parse(storedUser))
-      setIsLoggedIn(true)
+      const user = JSON.parse(storedUser)
+      if (user.email !== "admin@charlies.com") {
+        localStorage.removeItem("currentUser")
+        setCurrentUser(null)
+        setIsLoggedIn(false)
+      } else {
+        setCurrentUser(user)
+        setIsLoggedIn(true)
+      }
     }
     setIsInitialized(true)
   }, [])
@@ -60,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ currentUser, isLoggedIn, isAdmin, isManager, login, logout }}>
+    <AuthContext.Provider value={{ currentUser, isLoggedIn, isAdmin, isManager, isInitialized, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

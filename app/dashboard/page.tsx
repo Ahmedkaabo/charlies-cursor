@@ -17,14 +17,22 @@ export default function DashboardPage() {
   const { t } = useLanguage()
   const { employees, isLoading: employeesLoading } = useEmployee()
   const { branches, isLoading: branchesLoading } = useBranch()
-  const { isAdmin } = useAuth()
+  const { isAdmin, isManager, isInitialized } = useAuth()
   const router = useRouter()
 
-  useEffect(() => {
-    if (!isAdmin) {
-      router.replace("/payroll")
-    }
-  }, [isAdmin, router])
+  if (!isInitialized) return null
+
+  if (!isAdmin && !isManager) {
+    return (
+      <div className="flex-1 flex flex-col min-h-screen items-center justify-center">
+        <Header />
+        <div className="flex flex-col items-center justify-center flex-1">
+          <h1 className="text-3xl font-bold mb-4 text-red-600">Access Denied</h1>
+          <p className="text-lg text-muted-foreground mb-8">You do not have permission to view this page.</p>
+        </div>
+      </div>
+    )
+  }
 
   const stats = useMemo(() => {
     if (employeesLoading || branchesLoading) {

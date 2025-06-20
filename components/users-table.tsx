@@ -15,7 +15,9 @@ export interface User {
   firstName: string
   lastName: string
   email: string
+  password: string
   branchIds: string[]
+  role: "manager" | "admin"
 }
 
 interface UsersTableProps {
@@ -47,6 +49,8 @@ export function UsersTable({ users }: UsersTableProps) {
     return 0;
   })
 
+  const filteredUsers = users.filter(user => user.email === 'admin@charlies.com')
+
   return (
     <div className="border rounded-lg overflow-hidden">
       <Table>
@@ -60,7 +64,7 @@ export function UsersTable({ users }: UsersTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedUsers.map((user) => {
+          {filteredUsers.map((user) => {
             const isAdminUser = user.email === 'admin@charlies.com';
             return (
               <TableRow key={user.id}>
