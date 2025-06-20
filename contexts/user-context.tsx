@@ -33,24 +33,24 @@ const ADMIN_USER: User = {
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<User[]>(() => {
-    if (typeof window === 'undefined') {
-      return [ADMIN_USER];
-    }
-    try {
-      const storedUsers = localStorage.getItem("users")
-      if (storedUsers) {
-        const parsedUsers = JSON.parse(storedUsers);
-        // Ensure admin user always exists and is correct
-        const adminExists = parsedUsers.some((u: User) => u.id === ADMIN_USER.id);
-        if (!adminExists) {
-            return [ADMIN_USER, ...parsedUsers.filter((u:User) => u.id !== ADMIN_USER.id)];
+    let initialUsers: User[] = [];
+    if (typeof window !== 'undefined') {
+        try {
+            const storedUsers = localStorage.getItem("users");
+            if (storedUsers) {
+                initialUsers = JSON.parse(storedUsers);
+            }
+        } catch (error) {
+            console.error("Failed to parse users from localStorage", error);
+            initialUsers = []; // Start fresh if localStorage is corrupt
         }
-        return parsedUsers.map((u: User) => u.id === ADMIN_USER.id ? ADMIN_USER : u);
-      }
-    } catch (error) {
-        console.error("Failed to parse users from localStorage", error);
     }
-    return [ADMIN_USER]
+
+    // Filter out any existing admin user (by ID or email) to prevent duplicates
+    const otherUsers = initialUsers.filter(u => u.id !== ADMIN_USER.id && u.email !== ADMIN_USER.email);
+
+    // Return the hardcoded admin user plus the other users
+    return [ADMIN_USER, ...otherUsers];
   })
 
   useEffect(() => {
