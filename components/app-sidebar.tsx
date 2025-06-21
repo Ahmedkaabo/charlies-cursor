@@ -1,8 +1,9 @@
 "use client"
 
 import type * as React from "react"
-import { BarChart3, Calendar, Users, Building2, GitBranch, UserCog } from "lucide-react"
+import { BarChart3, Calendar, Users, Building2, GitBranch, UserCog, Shield } from "lucide-react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 import {
   Sidebar,
@@ -32,6 +33,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
   const { t } = useLanguage()
   const { isAdmin, isManager, currentUser, hasPermission } = useAuth() // Get user roles and current user
   const { isMobile, setOpenMobile } = useSidebar()
+  const pathname = usePathname()
 
   const userRole = currentUser?.role || "viewer"
   const allowedPages = rolePermissions[userRole] || []
@@ -42,7 +44,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
     { title: "staff", url: "/staff", icon: Users },
     { title: "branches", url: "/branches", icon: GitBranch },
     { title: "users", url: "/users", icon: UserCog },
-    { title: "Roles", url: "/roles", icon: UserCog },
+    { title: "Roles", url: "/roles", icon: Shield },
   ]
 
   const navigationItems = allNavItems.filter(item => hasPermission(item.title.toLowerCase()))
@@ -77,16 +79,19 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link href={item.url} onClick={handleMenuItemClick}>
-                      <item.icon />
-                      <span>{t(item.title)}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {navigationItems.map((item) => {
+                const isActive = pathname === item.url
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild className={isActive ? "bg-muted text-foreground" : ""}>
+                      <Link href={item.url} onClick={handleMenuItemClick}>
+                        <item.icon />
+                        <span>{t(item.title)}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
