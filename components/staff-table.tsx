@@ -38,11 +38,12 @@ export function StaffTable({ staff }: StaffTableProps) {
     return colors[role] || "bg-gray-100 text-gray-800"
   }
 
-  const getBranchBadges = (branchIds: string[]) => {
-    if (branchIds.length === branches.length && branches.length > 0 && branchIds.every(id => branches.some(b => b.id === id))) {
+  const getBranchBadges = (branch_ids: string[] | undefined) => {
+    if (!branch_ids) return null;
+    if (branch_ids.length === branches.length && branches.length > 0 && branch_ids.every(id => branches.some(b => b.id === id))) {
       return <Badge variant="secondary">All Branches</Badge>
     }
-    return branchIds
+    return branch_ids
       .map((id) => {
         const branch = branches.find((b) => b.id === id)
         return branch ? <Badge key={id} variant="secondary">{branch.name}</Badge> : null
@@ -87,7 +88,7 @@ export function StaffTable({ staff }: StaffTableProps) {
                 >
                   <div className="min-w-[180px]">
                     <div className="font-semibold text-sm sm:text-base">
-                      {employee.firstName} {employee.lastName}
+                      {employee.first_name} {employee.last_name}
                     </div>
                     {employee.phone && <div className="text-xs sm:text-sm text-muted-foreground">{employee.phone}</div>}
                   </div>
@@ -100,13 +101,13 @@ export function StaffTable({ staff }: StaffTableProps) {
                   </Badge>
                 </TableCell>
                 <TableCell className={`text-sm whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
-                  {formatSalary(employee.baseSalary)} {t("egp")}
+                  {formatSalary(employee.base_salary)} {t("egp")}
                 </TableCell>
                 <TableCell className={`text-sm whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
-                  {employee.startDate}
+                  {employee.start_date}
                 </TableCell>
                 <TableCell className={`text-sm ${isRTL ? "text-right" : "text-left"}`}>
-                  {getBranchBadges(employee.branchIds)}
+                  {getBranchBadges(employee.branch_ids)}
                 </TableCell>
                 <TableCell className={isRTL ? "text-right" : "text-left"}>
                   <Badge variant={employee.status === "approved" ? "default" : "destructive"} className="text-xs">
