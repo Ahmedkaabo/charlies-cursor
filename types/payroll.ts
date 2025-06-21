@@ -24,7 +24,8 @@ export interface Employee {
 export interface Branch {
   id: string
   name: string
-  // Removed nameAr property
+  staffRoles?: Record<string, number> // e.g., { barista: 2, waiter: 3 }
+  shifts?: Array<{ name: string; start: string; end: string }>
 }
 
 export interface PayrollData {

@@ -32,7 +32,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
             last_name: user.last_name,
             email: user.email,
             branch_ids: user.branch_ids || [],
-            role: user.role,
+            role: user.role as "admin" | "manager" | "owner",
             password: ""
         })
     }
@@ -41,12 +41,12 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
   const branchOptions = allBranches.map((branch) => ({ label: branch.name, value: branch.id }))
 
   // Update branch_ids when role changes
-  const handleRoleChange = (value: "admin" | "manager") => {
+  const handleRoleChange = (value: "admin" | "manager" | "owner") => {
     if (value === "admin") {
       // Admin users get access to all branches
       setFormData(prev => ({ ...prev, role: value, branch_ids: allBranches.map(b => b.id) }))
     } else {
-      // Manager users keep their current branch assignments or start with none
+      // Manager/Owner users keep their current branch assignments or start with none
       setFormData(prev => ({ ...prev, role: value, branch_ids: prev.branch_ids || [] }))
     }
   }
@@ -107,6 +107,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="manager">{t("manager")}</SelectItem>
+                    <SelectItem value="owner">{t("owner")}</SelectItem>
                     <SelectItem value="admin">{t("admin")}</SelectItem>
                 </SelectContent>
             </Select>

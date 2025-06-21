@@ -10,7 +10,7 @@ export interface User {
   email: string
   password: string
   branch_ids: string[]
-  role: "admin" | "manager"
+  role: "admin" | "manager" | "owner"
   token_version: number
 }
 

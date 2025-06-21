@@ -1,6 +1,6 @@
 "use client"
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -13,7 +13,7 @@ import { useUser } from "@/contexts/user-context"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/contexts/auth-context"
 
-export function AddUserDialog() {
+export function AddUserDialog({ buttonLabel, defaultRole }: { buttonLabel?: string, defaultRole?: 'owner' | 'manager' | 'admin' }) {
   const { t, language } = useLanguage()
   const { allBranches } = useBranch()
   const { addUser } = useUser()
@@ -27,18 +27,25 @@ export function AddUserDialog() {
     email: "",
     password: "",
     branch_ids: [] as string[],
-    role: "manager" as "admin" | "manager",
+    role: defaultRole || "manager",
+    token_version: 1,
   })
+
+  useEffect(() => {
+    if (defaultRole) {
+      setFormData(prev => ({ ...prev, role: defaultRole }))
+    }
+  }, [defaultRole])
 
   const branchOptions = allBranches.map((branch) => ({ label: branch.name, value: branch.id }))
 
   // Update branch_ids when role changes
-  const handleRoleChange = (value: "admin" | "manager") => {
+  const handleRoleChange = (value: "admin" | "manager" | "owner") => {
     if (value === "admin") {
       // Admin users get access to all branches
       setFormData(prev => ({ ...prev, role: value, branch_ids: allBranches.map(b => b.id) }))
     } else {
-      // Manager users start with no branches selected
+      // Manager/Owner users start with no branches selected
       setFormData(prev => ({ ...prev, role: value, branch_ids: [] }))
     }
   }
@@ -49,7 +56,7 @@ export function AddUserDialog() {
     setError(null)
     try {
       await addUser(formData)
-      setFormData({ first_name: "", last_name: "", email: "", password: "", branch_ids: [], role: "manager" })
+      setFormData({ first_name: "", last_name: "", email: "", password: "", branch_ids: [], role: "manager", token_version: 1 })
       setOpen(false)
     } catch (err: any) {
         setError(err.message || "An unexpected error occurred.")
@@ -67,7 +74,7 @@ export function AddUserDialog() {
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Plus className="h-4 w-4" />
-          {t("addUser")}
+          {buttonLabel || t("addUser")}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
@@ -96,12 +103,13 @@ export function AddUserDialog() {
           </div>
            <div>
             <Label htmlFor="role" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>{t("role")}</Label>
-            <Select value={formData.role} onValueChange={handleRoleChange}>
+            <Select value={formData.role} onValueChange={handleRoleChange} disabled={!!defaultRole}>
                 <SelectTrigger>
                     <SelectValue placeholder={t("selectRole")} />
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="manager">{t("manager")}</SelectItem>
+                    <SelectItem value="owner">{t("owner")}</SelectItem>
                     <SelectItem value="admin">{t("admin")}</SelectItem>
                 </SelectContent>
             </Select>

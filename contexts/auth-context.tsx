@@ -4,7 +4,7 @@ import type React from "react"
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
 
-export type UserRole = "admin" | "manager" | "hr" | "viewer" | null
+export type UserRole = "admin" | "manager" | "owner" | "hr" | "viewer" | null
 
 export interface AuthUser {
   id: string;
@@ -12,7 +12,7 @@ export interface AuthUser {
   first_name: string;
   last_name: string;
   branch_ids: string[];
-  role: UserRole;
+  role: "admin" | "manager" | "owner" | "hr" | "viewer" | null;
   token_version: number;
   permissions?: Record<string, boolean>;
 }
@@ -149,6 +149,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       // If userPerm is defined but not valid, treat as false
       return false;
+    }
+    // Owner: view-only access to all modules
+    if (currentUser?.role === 'owner') {
+      return type === 'view';
     }
     // Fallback to role permissions
     const rolePerm = permissions?.[module];

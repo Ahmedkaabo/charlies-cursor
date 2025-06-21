@@ -19,6 +19,17 @@ interface BranchContextType {
 
 const BranchContext = createContext<BranchContextType | undefined>(undefined)
 
+// Utility to map camelCase to snake_case for branch updates
+function mapBranchUpdateToDb(updates: any) {
+  const mapped: any = { ...updates };
+  if ('staffRoles' in mapped) {
+    mapped.staff_roles = mapped.staffRoles;
+    delete mapped.staffRoles;
+  }
+  // Add more mappings as needed
+  return mapped;
+}
+
 export function BranchProvider({ children }: { children: React.ReactNode }) {
   const [allBranches, setAllBranches] = useState<Branch[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -122,7 +133,8 @@ export function BranchProvider({ children }: { children: React.ReactNode }) {
     console.log("Updating branch:", { id, updates })
 
     try {
-      const { data, error } = await supabase.from("branches").update(updates).eq("id", id).select()
+      const dbUpdates = mapBranchUpdateToDb(updates);
+      const { data, error } = await supabase.from("branches").update(dbUpdates).eq("id", id).select()
 
       console.log("Update branch response:", { data, error })
 

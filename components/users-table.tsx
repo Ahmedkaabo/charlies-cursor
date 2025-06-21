@@ -47,7 +47,6 @@ export function UsersTable({ users }: UsersTableProps) {
 
   return (
     <>
-      {getPermission && getPermission('users', 'add') && <AddUserDialog />}
       <div className="border rounded-lg overflow-hidden">
         <Table>
             <TableHeader>
@@ -67,13 +66,21 @@ export function UsersTable({ users }: UsersTableProps) {
                 <TableCell><Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>{t(user.role)}</Badge></TableCell>
                 <TableCell className="space-x-1">{getBranchBadges(user.branch_ids, user.role)}</TableCell>
                 <TableCell className="text-right">
-                    {user.role !== 'admin' && getPermission && getPermission('users', 'edit') && (
-                      <>
+                  {user.role !== 'admin' && getPermission && getPermission('users', 'edit') && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
                         {getPermission('users', 'delete') && (
                           <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-red-600">{t("delete")}</DropdownMenuItem>
                         )}
-                      </>
-                    )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </TableCell>
                 </TableRow>
             ))}

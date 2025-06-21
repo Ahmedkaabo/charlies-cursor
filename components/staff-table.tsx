@@ -141,16 +141,15 @@ export function StaffTable({ staff }: StaffTableProps) {
                           {t("approve")}
                         </DropdownMenuItem>
                       )}
-                      {getPermission && getPermission('staff', 'delete') && (
-                        employee.is_active === false ? (
-                          <DropdownMenuItem onClick={() => forceDeleteEmployee(employee.id)} className="text-red-600">
-                            {t("delete")}
-                          </DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem onClick={() => deleteEmployee(employee.id)} className="text-red-600">
-                            {t("terminate")}
-                          </DropdownMenuItem>
-                        )
+                      {employee.is_active === false && getPermission && getPermission('staff', 'delete') ? (
+                        <DropdownMenuItem onClick={() => forceDeleteEmployee(employee.id)} className="text-red-600">
+                          {t("delete")}
+                        </DropdownMenuItem>
+                      ) : null}
+                      {employee.is_active !== false && getPermission && getPermission('staff', 'edit') && (
+                        <DropdownMenuItem onClick={() => deleteEmployee(employee.id)} className="text-red-600">
+                          {t("terminate")}
+                        </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>
                   </DropdownMenu>
