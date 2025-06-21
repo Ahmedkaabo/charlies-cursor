@@ -8,18 +8,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Users, DollarSign, TrendingUp, Building2, Calendar, UserCheck, AlertTriangle, CheckCircle } from "lucide-react"
-import { useMemo, useEffect } from "react"
+import { useMemo, useEffect, useState } from "react"
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
 import { Employee } from "@/types/payroll"
+import { Button } from "@/components/ui/button"
+import { ChevronDown } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 export default function DashboardPage() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const { employees, isLoading: employeesLoading } = useEmployee()
   const { branches, isLoading: branchesLoading } = useBranch()
   const { isAdmin, isManager, isInitialized } = useAuth()
   const router = useRouter()
+  const months = language === "ar"
+    ? ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
+    : ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
+  const [selectedBranch, setSelectedBranch] = useState<string | null>(null)
+  const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth)
+  const [selectedYear] = useState<number>(currentYear)
+  const monthYearOptions = Array.from({ length: currentYear === selectedYear ? currentMonth + 1 : 12 }, (_, m) => ({
+    label: `${months[m]} ${selectedYear}`,
+    month: m,
+    year: selectedYear,
+  }))
 
   if (!isInitialized) return null
 
@@ -43,6 +61,22 @@ export default function DashboardPage() {
     )
   }
 
+  const filteredEmployees = useMemo(() => {
+    let filtered = employees
+    if (selectedBranch && selectedBranch !== "all") {
+      filtered = filtered.filter(emp => emp.branch_ids?.includes(selectedBranch))
+    }
+    // Only approved and started
+    filtered = filtered.filter(emp => {
+      if (emp.status !== 'approved') return false;
+      const [startYear, startMonth] = emp.start_date.split('-').map(Number);
+      if (selectedYear < startYear) return false;
+      if (selectedYear === startYear && selectedMonth + 1 < startMonth) return false;
+      return true;
+    })
+    return filtered
+  }, [employees, selectedBranch, selectedYear, selectedMonth])
+
   const stats = useMemo(() => {
     if (employeesLoading || branchesLoading) {
       return {
@@ -59,61 +93,55 @@ export default function DashboardPage() {
       }
     }
 
-    const currentMonth = new Date().getMonth()
-    const currentYear = new Date().getFullYear()
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
+    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate()
 
     const calculateTotalAttendedDays = (employee: Employee): number => {
-      if (!employee.attendance) {
-        return 0;
-      }
+      if (!employee.attendance) return 0;
       let totalDays = 0;
-      // employee.attendance is Record<string, Record<number, number>>
-      // e.g. { "branch_id_1": { "1": 1, "2": 1 }, "branch_id_2": { "5": 1 } }
-      const branchAttendances = Object.values(employee.attendance);
-      for (const branchAttendance of branchAttendances) {
-        // branchAttendance is Record<number, number>, e.g. { "1": 1, "2": 1 }
-        if (typeof branchAttendance === 'object' && branchAttendance !== null) {
-            const dayValues = Object.values(branchAttendance);
-            for (const value of dayValues) {
-              if (typeof value === 'number') {
-                totalDays += value;
-              }
-            }
+      // Only count attendance for the selected month/year and branch
+      if (selectedBranch && selectedBranch !== "all") {
+        const branchAttendance = employee.attendance[selectedBranch]?.[`${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`] || {}
+        totalDays = Object.values(branchAttendance).reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0)
+      } else {
+        // All branches
+        for (const branchId in employee.attendance) {
+          const branchAttendance = employee.attendance[branchId]?.[`${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`] || {}
+          totalDays += Object.values(branchAttendance).reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0)
         }
       }
       return totalDays;
     }
 
-    const totalPayroll = employees.reduce((sum, emp) => {
-      // Calculate final salary for each branch the employee works in
+    const totalPayroll = filteredEmployees.reduce((sum, emp) => {
       let employeeTotalSalary = 0;
-      
-      if (emp.branch_ids && emp.branch_ids.length > 0) {
-        // For each branch the employee is assigned to
-        for (const branchId of emp.branch_ids) {
-          const branchAttendance = emp.attendance?.[branchId] || {};
-          const baseAttendedDays = Object.values(branchAttendance).reduce((sum, val) => sum + val, 0);
-          const totalAdjustedDays = baseAttendedDays + (emp.bonus_days || 0) - (emp.penalty_days || 0);
-          const branchSalary = (emp.base_salary / 30) * (totalAdjustedDays + (emp.allowed_absent_days || 0));
-          employeeTotalSalary += branchSalary;
-        }
+      if (selectedBranch && selectedBranch !== "all") {
+        // Only selected branch
+        const branchAttendance = emp.attendance[selectedBranch]?.[`${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`] || {}
+        const baseAttendedDays = Object.values(branchAttendance).reduce((s, v) => s + (typeof v === 'number' ? v : 0), 0)
+        const bonus = emp.bonus_days?.[selectedBranch]?.[`${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`] || 0
+        const penalty = emp.penalty_days?.[selectedBranch]?.[`${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`] || 0
+        const totalAdjustedDays = baseAttendedDays + bonus - penalty
+        employeeTotalSalary = (emp.base_salary / 30) * (totalAdjustedDays + (emp.allowed_absent_days || 0))
       } else {
-        // If no branches assigned, calculate as if they work in one branch
-        const totalAttendedDays = calculateTotalAttendedDays(emp);
-        const totalAdjustedDays = totalAttendedDays + (emp.bonus_days || 0) - (emp.penalty_days || 0);
-        employeeTotalSalary = (emp.base_salary / 30) * (totalAdjustedDays + (emp.allowed_absent_days || 0));
+        // All branches
+        for (const branchId of emp.branch_ids || []) {
+          const branchAttendance = emp.attendance[branchId]?.[`${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`] || {}
+          const baseAttendedDays = Object.values(branchAttendance).reduce((s, v) => s + (typeof v === 'number' ? v : 0), 0)
+          const bonus = emp.bonus_days?.[branchId]?.[`${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`] || 0
+          const penalty = emp.penalty_days?.[branchId]?.[`${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`] || 0
+          const totalAdjustedDays = baseAttendedDays + bonus - penalty
+          employeeTotalSalary += (emp.base_salary / 30) * (totalAdjustedDays + (emp.allowed_absent_days || 0))
+        }
       }
-      
       return sum + employeeTotalSalary;
-    }, 0);
+    }, 0)
 
-    const totalEmployees = employees.length
+    const totalEmployees = filteredEmployees.length
     const totalBranches = branches.length
-    const approvedEmployees = employees.filter((emp) => emp.status === "approved").length
-    const pendingEmployees = employees.filter((emp) => emp.status === "pending").length
+    const approvedEmployees = filteredEmployees.filter((emp) => emp.status === "approved").length
+    const pendingEmployees = filteredEmployees.filter((emp) => emp.status === "pending").length
 
-    const attendanceData = employees.map((emp) => {
+    const attendanceData = filteredEmployees.map((emp) => {
       const totalAttendedDays = calculateTotalAttendedDays(emp)
       const potentialWorkDays = daysInMonth * (emp.branch_ids?.length || 1)
       const attendanceRate = potentialWorkDays > 0 ? (totalAttendedDays / potentialWorkDays) * 100 : 0
@@ -125,7 +153,7 @@ export default function DashboardPage() {
         ? attendanceData.reduce((sum, emp) => sum + emp.attendanceRate, 0) / attendanceData.length
         : 0
 
-    const roleDistribution = employees.reduce(
+    const roleDistribution = filteredEmployees.reduce(
       (acc, emp) => {
         acc[emp.role] = (acc[emp.role] || 0) + 1
         return acc
@@ -133,7 +161,7 @@ export default function DashboardPage() {
       {} as Record<string, number>,
     )
 
-    const branchDistribution = employees.reduce(
+    const branchDistribution = filteredEmployees.reduce(
       (acc, emp) => {
         (emp.branch_ids || []).forEach((branchId) => {
           const branch = branches.find((b) => b.id === branchId)
@@ -180,7 +208,7 @@ export default function DashboardPage() {
       recentActivity,
       attendanceByRole: finalAttendanceByRole,
     }
-  }, [employees, branches, employeesLoading, branchesLoading])
+  }, [filteredEmployees, branches, employeesLoading, branchesLoading, selectedMonth, selectedYear, selectedBranch])
 
   const getRoleBadgeColor = (role: string) => {
     const colors = {
@@ -228,6 +256,46 @@ export default function DashboardPage() {
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{t("dashboard")}</h1>
             <p className="text-muted-foreground">{t("welcomeMessage")}</p>
           </div>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row items-center gap-3 mb-4">
+          {/* Branch Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2 justify-between w-full sm:w-auto">
+                <span>{selectedBranch ? (branches.find(b => b.id === selectedBranch)?.name || t("allBranches")) : t("allBranches")}</span>
+                <ChevronDown className="h-4 w-4 shrink-0" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56">
+              <DropdownMenuItem onClick={() => setSelectedBranch(null)}>{t("allBranches")}</DropdownMenuItem>
+              {branches.map((branch) => (
+                <DropdownMenuItem key={branch.id} onClick={() => setSelectedBranch(branch.id)}>
+                  {branch.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {/* Month Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2 justify-between w-full sm:w-auto">
+                <span>{monthYearOptions[selectedMonth].label}</span>
+                <ChevronDown className="h-4 w-4 shrink-0" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {monthYearOptions.map((opt, idx) => (
+                <DropdownMenuItem
+                  key={idx}
+                  onClick={() => setSelectedMonth(opt.month)}
+                >
+                  {opt.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Key Metrics */}

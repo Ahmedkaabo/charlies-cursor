@@ -115,6 +115,15 @@ export default function PayrollPage() {
 
   const employeesForPayroll = employees
     .filter((emp) => (selectedBranch ? (emp.branch_ids || []).includes(selectedBranch.id) : true))
+    .filter((emp) => {
+      // Only approved
+      if (emp.status !== 'approved') return false;
+      // Only after start date
+      const [startYear, startMonth] = emp.start_date.split('-').map(Number);
+      if (selectedYear < startYear) return false;
+      if (selectedYear === startYear && selectedMonth + 1 < startMonth) return false;
+      return true;
+    })
     .map((emp) => ({
       ...emp,
       month: selectedMonth,
@@ -164,26 +173,34 @@ export default function PayrollPage() {
               </DropdownMenu>
 
               {/* Month/Year Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2 justify-between w-full sm:w-auto">
-                    <span>
-                      {language === "ar" ? monthsAr[selectedMonth] : months[selectedMonth]} {selectedYear}
-                    </span>
-                    <ChevronDown className="h-4 w-4 shrink-0" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  {monthYearOptions.map((opt, idx) => (
-                    <DropdownMenuItem
-                      key={idx}
-                      onClick={() => setSelectedMonth(opt.month)}
-                    >
-                      {opt.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {isAdmin ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="gap-2 justify-between w-full sm:w-auto">
+                      <span>
+                        {language === "ar" ? monthsAr[selectedMonth] : months[selectedMonth]} {selectedYear}
+                      </span>
+                      <ChevronDown className="h-4 w-4 shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    {monthYearOptions.map((opt, idx) => (
+                      <DropdownMenuItem
+                        key={idx}
+                        onClick={() => setSelectedMonth(opt.month)}
+                      >
+                        {opt.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button variant="outline" className="gap-2 justify-between w-full sm:w-auto" disabled>
+                  <span>
+                    {language === "ar" ? monthsAr[selectedMonth] : months[selectedMonth]} {selectedYear}
+                  </span>
+                </Button>
+              )}
             </div>
 
             {/* Right side - Action buttons */}
