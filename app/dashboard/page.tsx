@@ -71,8 +71,8 @@ export default function DashboardPage() {
     // Payroll calculations
     const totalPayroll = employees.reduce((sum, emp) => {
       const baseAttendedDays = Object.values(emp.attendance || {}).reduce((daySum, val) => daySum + val, 0)
-      const totalAdjustedDays = baseAttendedDays + (emp.bonusDays || 0) - (emp.penaltyDays || 0)
-      const finalSalary = (emp.baseSalary / 30) * (totalAdjustedDays + 4) // +4 for weekends
+      const totalAdjustedDays = baseAttendedDays + (emp.bonus_days || 0) - (emp.penalty_days || 0)
+      const finalSalary = (emp.base_salary / 30) * (totalAdjustedDays + 4) // +4 for weekends
       return sum + finalSalary
     }, 0)
 
@@ -304,7 +304,7 @@ export default function DashboardPage() {
                   <span className="text-sm font-medium">{branch}</span>
                   <div className="flex items-center gap-2">
                     <span className="text-sm">
-                      {count} {t("employeesCount")}
+                      {count} {t("employees")}
                     </span>
                     <div className="w-20 bg-gray-200 rounded-full h-2">
                       <div
@@ -361,7 +361,7 @@ export default function DashboardPage() {
                     <div key={emp.id} className="flex items-center justify-between p-2 bg-orange-50 rounded-lg">
                       <div>
                         <p className="text-sm font-medium">
-                          {emp.firstName} {emp.lastName}
+                          {emp.first_name} {emp.last_name}
                         </p>
                         <p className="text-xs text-muted-foreground">{t(emp.role)}</p>
                       </div>
