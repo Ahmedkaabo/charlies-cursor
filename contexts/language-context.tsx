@@ -132,6 +132,7 @@ const translations = {
     captinOrder: "Captain Order",
     selectRole: "Select Role",
     selectBranches: "Select Branches",
+    allowedAbsentDays: "Allowed Absent Days",
   },
   ar: {
     dashboard: "لوحة التحكم",
@@ -252,6 +253,7 @@ const translations = {
     captinOrder: "كابتن اوردر",
     selectRole: "اختر المنصب",
     selectBranches: "اختر الفروع",
+    allowedAbsentDays: "أيام الغياب المسموح بها",
   },
 }
 

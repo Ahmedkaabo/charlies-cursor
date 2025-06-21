@@ -38,7 +38,7 @@ export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExpor
   const calculateFinalSalary = (employee: Employee) => {
     const baseAttendedDays = calculateBaseAttendedDays(employee.attendance)
     const totalAdjustedDays = baseAttendedDays + employee.bonus_days - employee.penalty_days
-    return (employee.base_salary / 30) * (totalAdjustedDays + 4)
+    return (employee.base_salary / 30) * (totalAdjustedDays + (employee.allowed_absent_days || 0))
   }
 
   const isRTL = language === "ar"

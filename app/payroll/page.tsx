@@ -83,7 +83,7 @@ export default function PayrollPage() {
     const exportData = employeesForPayroll.map((emp) => {
       const baseAttendedDays = Object.values(emp.attendance).reduce((sum, val) => sum + val, 0)
       const totalAdjustedDays = baseAttendedDays + emp.bonus_days - emp.penalty_days
-      const finalSalary = (emp.base_salary / 30) * (totalAdjustedDays + 4)
+      const finalSalary = (emp.base_salary / 30) * (totalAdjustedDays + (emp.allowed_absent_days || 0))
 
       return {
         firstName: emp.first_name,

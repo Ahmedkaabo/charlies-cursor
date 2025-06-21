@@ -8,6 +8,7 @@ export interface Employee {
   attendance: Record<number, number> // day -> hours (0, 0.25, 0.5, 1)
   bonus_days: number // positive adjustments
   penalty_days: number // negative adjustments
+  allowed_absent_days: number; // New: For salary calculation
   month: number // Added for attendance calculation context
   year: number // Added for attendance calculation context
   start_date: string // New: YYYY-MM-DD format

@@ -61,21 +61,23 @@ export function ProfileDropdown() {
           </AlertDialogTrigger>
         </DropdownMenuContent>
       </DropdownMenu>
-      <AlertDialogContent className="max-w-sm text-center p-6">
-        <AlertDialogHeader className="flex flex-col items-center justify-center text-center">
-          <div className="rounded-full border border-gray-200 p-4 bg-gray-100 mb-4">
-            <LogOut className="h-8 w-8 text-gray-500" />
+      <AlertDialogContent className="max-w-md">
+        <AlertDialogHeader className="flex items-start gap-4">
+          <div className="rounded-full border border-gray-200 p-3 bg-gray-100 dark:bg-gray-800 dark:border-gray-700">
+            <LogOut className="h-6 w-6 text-gray-500 dark:text-gray-400" />
           </div>
-          <AlertDialogTitle className="text-2xl font-bold">{t("areYouSure")}</AlertDialogTitle>
-          <AlertDialogDescription className="text-muted-foreground mt-2">
-            {t("logoutConfirmation")}
-          </AlertDialogDescription>
+          <div className="flex-grow">
+            <AlertDialogTitle className="text-lg font-semibold">Are you sure you want to log out?</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-muted-foreground mt-1">
+              You will be returned to the login screen.
+            </AlertDialogDescription>
+          </div>
         </AlertDialogHeader>
-        <AlertDialogFooter className="flex sm:justify-center gap-2 mt-6">
-          <AlertDialogCancel className="w-full sm:w-auto px-6 py-2.5">{t("cancel")}</AlertDialogCancel>
+        <AlertDialogFooter className="mt-4 flex justify-end gap-2">
+          <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleLogout}
-            className="w-full sm:w-auto px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white"
+            className="bg-red-600 hover:bg-red-700"
           >
             {t("logout")}
           </AlertDialogAction>

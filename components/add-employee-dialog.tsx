@@ -45,6 +45,7 @@ export function AddEmployeeDialog() {
     branchIds: [] as string[],
     email: "",
     password: "",
+    allowed_absent_days: 4,
   })
 
   const branchOptions = branches.map((branch) => ({
@@ -65,14 +66,15 @@ export function AddEmployeeDialog() {
       formData.phone.length === 11
     ) {
       const newEmployee: any = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
         phone: formData.phone,
         role: formData.role,
-        baseSalary: Number.parseFloat(formData.baseSalary),
-        startDate:
+        base_salary: Number.parseFloat(formData.baseSalary),
+        start_date:
           typeof formData.startDate === "string" ? formData.startDate : format(formData.startDate, "yyyy-MM-dd"),
-        branchIds: formData.branchIds,
+        branch_ids: formData.branchIds,
+        allowed_absent_days: formData.allowed_absent_days,
       }
       if (formData.role === "manager") {
         if (formData.email) newEmployee.email = formData.email
@@ -89,6 +91,7 @@ export function AddEmployeeDialog() {
         branchIds: [],
         email: "",
         password: "",
+        allowed_absent_days: 4,
       })
       setOpen(false)
     }
@@ -230,6 +233,22 @@ export function AddEmployeeDialog() {
               selected={formData.branchIds}
               onChange={(selectedBranches) => setFormData((prev) => ({ ...prev, branchIds: selectedBranches }))}
               placeholder={t("selectBranches")}
+              className={isRTL ? "text-right" : "text-left"}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="allowed_absent_days" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
+              {t("allowedAbsentDays")}
+            </Label>
+            <Input
+              id="allowed_absent_days"
+              type="number"
+              value={formData.allowed_absent_days}
+              onChange={(e) => setFormData((prev) => ({ ...prev, allowed_absent_days: Number(e.target.value) }))}
+              required
+              max={4}
+              placeholder={"Max 4"}
               className={isRTL ? "text-right" : "text-left"}
             />
           </div>

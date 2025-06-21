@@ -50,6 +50,7 @@ CREATE TABLE employees (
   phone TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('barista', 'waiter', 'captin_order', 'helper', 'steward', 'manager')),
   base_salary NUMERIC NOT NULL,
+  allowed_absent_days NUMERIC DEFAULT 4,
   attendance JSONB DEFAULT '{}'::jsonb,
   bonus_days NUMERIC DEFAULT 0,
   penalty_days NUMERIC DEFAULT 0,
@@ -114,19 +115,19 @@ VALUES (
 -- Sample Employees
 INSERT INTO employees (
   id, first_name, last_name, phone, role, base_salary,
-  month, year, start_date, branch_ids, status, email, password
+  allowed_absent_days, month, year, start_date, branch_ids, status, email, password
 ) VALUES
 (
   'emp_001', 'Ahmed', 'Hassan', '01234567890', 'barista', 3000,
-  EXTRACT(MONTH FROM NOW())::int, EXTRACT(YEAR FROM NOW())::int, '2025-01-01', ARRAY['el-estad-branch'], 'approved', NULL, NULL
+  4, EXTRACT(MONTH FROM NOW())::int, EXTRACT(YEAR FROM NOW())::int, '2025-01-01', ARRAY['el-estad-branch'], 'approved', NULL, NULL
 ),
 (
   'emp_002', 'Fatima', 'Ali', '01234567891', 'waiter', 2800,
-  EXTRACT(MONTH FROM NOW())::int, EXTRACT(YEAR FROM NOW())::int, '2025-01-01', ARRAY['chillout-branch'], 'approved', NULL, NULL
+  4, EXTRACT(MONTH FROM NOW())::int, EXTRACT(YEAR FROM NOW())::int, '2025-01-01', ARRAY['chillout-branch'], 'approved', NULL, NULL
 ),
 (
   'emp_manager_001', 'Omar', 'Mohamed', '01234567892', 'manager', 5000,
-  EXTRACT(MONTH FROM NOW())::int, EXTRACT(YEAR FROM NOW())::int, '2025-01-01', ARRAY['el-estad-branch', 'chillout-branch'], 'approved',
+  4, EXTRACT(MONTH FROM NOW())::int, EXTRACT(YEAR FROM NOW())::int, '2025-01-01', ARRAY['el-estad-branch', 'chillout-branch'], 'approved',
   'manager@charlies.com', 'manager123'
 );
 

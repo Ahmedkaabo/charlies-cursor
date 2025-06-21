@@ -46,6 +46,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
     branchIds: employee.branch_ids,
     email: employee.email || "", // Include email
     password: employee.password || "", // Include password
+    allowed_absent_days: employee.allowed_absent_days,
   })
 
   const branchOptions = branches.map((branch) => ({
@@ -66,6 +67,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
         branchIds: employee.branch_ids,
         email: employee.email || "",
         password: employee.password || "",
+        allowed_absent_days: employee.allowed_absent_days,
       })
     }
   }, [employee])
@@ -92,6 +94,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
         start_date:
           typeof formData.startDate === "string" ? formData.startDate : format(formData.startDate, "yyyy-MM-dd"),
         branch_ids: formData.branchIds,
+        allowed_absent_days: formData.allowed_absent_days,
       }
       if (formData.role === "manager") {
         if (formData.email) updateData.email = formData.email
@@ -268,6 +271,22 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
               </div>
             </>
           )}
+
+          <div>
+            <Label htmlFor="allowed_absent_days" className={`block ${isRTL ? "text-right" : "text-left"} mb-2`}>
+              {t("allowedAbsentDays")}
+            </Label>
+            <Input
+              id="allowed_absent_days"
+              type="number"
+              value={formData.allowed_absent_days}
+              onChange={(e) => setFormData((prev) => ({ ...prev, allowed_absent_days: Number(e.target.value) }))}
+              required
+              max={4}
+              placeholder={"Max 4"}
+              className={isRTL ? "text-right" : "text-left"}
+            />
+          </div>
 
           <DialogFooter className="flex flex-row-reverse justify-end gap-2 sm:flex-row sm:justify-end">
             <Button type="submit" className="flex-grow sm:flex-grow-0">
