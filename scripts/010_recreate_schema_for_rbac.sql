@@ -35,6 +35,7 @@ CREATE TABLE users (
   password TEXT NOT NULL,
   branch_ids TEXT[] DEFAULT '{}'::text[],
   role TEXT NOT NULL CHECK (role IN ('admin', 'manager')),
+  token_version INTEGER DEFAULT 1,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -80,7 +81,7 @@ INSERT INTO branches (id, name) VALUES
 ('lagons-aqua-branch', 'Lagons Aqua');
 
 -- Default Admin User (has access to all branches)
-INSERT INTO users (id, first_name, last_name, email, password, branch_ids, role)
+INSERT INTO users (id, first_name, last_name, email, password, branch_ids, role, token_version)
 VALUES (
   'user_admin_001',
   'Admin',
@@ -88,11 +89,15 @@ VALUES (
   'admin@charlies.com',
   'Medo123!''',
   (SELECT array_agg(id) FROM branches), -- Assign all branch IDs to admin
-  'admin'
-) ON CONFLICT (email) DO NOTHING;
+  'admin',
+  1
+) ON CONFLICT (email) DO UPDATE SET 
+    -- If admin already exists, update their branches but keep their existing data
+    branch_ids = (SELECT array_agg(id) FROM branches),
+    token_version = users.token_version; -- Do not reset token version
 
 -- Sample Manager User
-INSERT INTO users (id, first_name, last_name, email, password, branch_ids, role)
+INSERT INTO users (id, first_name, last_name, email, password, branch_ids, role, token_version)
 VALUES (
   'user_manager_001',
   'Manager',
@@ -100,9 +105,11 @@ VALUES (
   'manager@charlies.com',
   'manager123',
   ARRAY['el-estad-branch', 'chillout-branch'], -- Assign specific branches
-  'manager'
-) ON CONFLICT (email) DO NOTHING;
-
+  'manager',
+  1
+) ON CONFLICT (email) DO UPDATE SET 
+    branch_ids = EXCLUDED.branch_ids,
+    token_version = users.token_version; -- Do not reset token version
 
 -- Sample Employees
 INSERT INTO employees (

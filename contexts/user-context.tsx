@@ -11,6 +11,7 @@ export interface User {
   password: string
   branch_ids: string[]
   role: "admin" | "manager"
+  token_version: number
 }
 
 interface UserContextType {
@@ -55,6 +56,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         password: "Medo123!'",
         branch_ids: [], // Empty array means all branches for admin
         role: "admin",
+        token_version: 0,
       }
 
       try {

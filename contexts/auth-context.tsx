@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
+import { supabase } from "@/lib/supabase"
 
 type UserRole = "admin" | "manager" | null // Null when not logged in
 
@@ -12,6 +13,7 @@ export interface AuthUser {
   last_name: string;
   branch_ids: string[];
   role: UserRole;
+  token_version: number;
 }
 
 interface AuthContextType {
@@ -33,19 +35,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false)
 
   useEffect(() => {
-    // Initialize auth state from localStorage on mount
-    const storedUser = localStorage.getItem("currentUser")
-    if (storedUser) {
-      try {
-        const user = JSON.parse(storedUser)
-        setCurrentUser(user)
-        setIsLoggedIn(true)
-      } catch (error) {
-        console.error("Failed to parse stored user:", error)
-        localStorage.removeItem("currentUser")
+    const checkUserSession = async () => {
+      const storedUserJson = localStorage.getItem("currentUser");
+      if (storedUserJson) {
+        try {
+          const localUser: AuthUser = JSON.parse(storedUserJson);
+
+          // Fetch the latest user data from the database
+          const { data: dbUser, error } = await supabase
+            .from("users")
+            .select("id, token_version")
+            .eq("id", localUser.id)
+            .single();
+
+          // If user not found in DB or token version mismatch, force logout
+          if (error || !dbUser || dbUser.token_version !== localUser.token_version) {
+            logout();
+          } else {
+            setCurrentUser(localUser);
+            setIsLoggedIn(true);
+          }
+        } catch (error) {
+          console.error("Failed to parse or validate stored user:", error);
+          logout(); // Corrupted local storage, force logout
+        }
       }
-    }
-    setIsInitialized(true)
+      setIsInitialized(true);
+    };
+
+    checkUserSession();
   }, [])
 
   const login = useCallback((user: AuthUser) => {
