@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/contexts/auth-context"
-import { useUser } from "@/contexts/user-context"
 import { useRouter } from "next/navigation"
 import { useLanguage } from "@/contexts/language-context"
 
@@ -16,32 +15,22 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
-  const { login } = useAuth()
-  const { users } = useUser()
+  const [loading, setLoading] = useState(false)
+  const { loginWithCredentials } = useAuth()
   const router = useRouter()
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    setLoading(true)
 
-    const foundUser = users.find(
-      (user) => user.email === email && user.password === password
-    )
-
-    if (foundUser) {
-      const authUser = {
-        id: foundUser.id,
-        email: foundUser.email,
-        first_name: foundUser.first_name,
-        last_name: foundUser.last_name,
-        branch_ids: foundUser.branch_ids || [],
-        role: foundUser.role,
-      }
-      
-      login(authUser)
+    try {
+      await loginWithCredentials(email, password)
       router.push("/dashboard")
-    } else {
-      setError("Invalid email or password.")
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred.")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -62,9 +51,9 @@ export default function LoginPage() {
               <Label htmlFor="password" className="text-sm">{t("password")}</Label>
               <Input id="password" type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required className="text-base" />
             </div>
-            {error && <p className="text-sm text-red-500">{error}</p>}
-            <Button type="submit" className="w-full">
-              {t("login")}
+            {error && <p className="text-sm font-medium text-red-500 text-center">{error}</p>}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? t("loggingIn") : t("login")}
             </Button>
           </form>
         </CardContent>

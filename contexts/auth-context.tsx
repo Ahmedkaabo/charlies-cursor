@@ -22,7 +22,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isManager: boolean;
   isInitialized: boolean;
-  login: (user: AuthUser) => void;
+  loginWithCredentials: (email: string, password: string) => Promise<void>;
   logout: () => void;
   getUserBranches: () => string[];
 }
@@ -33,6 +33,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
+
+  const logout = useCallback(() => {
+    setCurrentUser(null)
+    setIsLoggedIn(false)
+    localStorage.removeItem("currentUser")
+  }, [])
 
   useEffect(() => {
     const checkUserSession = async () => {
@@ -64,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     checkUserSession();
-  }, [])
+  }, [logout])
 
   const login = useCallback((user: AuthUser) => {
     setCurrentUser(user)
@@ -72,11 +78,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("currentUser", JSON.stringify(user))
   }, [])
 
-  const logout = useCallback(() => {
-    setCurrentUser(null)
-    setIsLoggedIn(false)
-    localStorage.removeItem("currentUser")
-  }, [])
+  const loginWithCredentials = async (email: string, password: string) => {
+    const { data: user, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email)
+      .eq("password", password) // Note: In a real app, hash passwords!
+      .single();
+
+    if (error || !user) {
+      throw new Error("Invalid email or password.");
+    }
+    
+    // The user from the DB is valid, log them in.
+    login(user);
+  };
 
   const getUserBranches = useCallback(() => {
     if (!currentUser) return []
@@ -102,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAdmin, 
       isManager, 
       isInitialized, 
-      login, 
+      loginWithCredentials, 
       logout,
       getUserBranches 
     }}>
