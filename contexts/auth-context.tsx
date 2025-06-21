@@ -63,12 +63,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const getUserBranches = useCallback(() => {
     if (!currentUser) return []
     
-    // Admin users have access to all branches (represented by empty array or special value)
-    if (currentUser.role === "admin") {
-      return [] // Empty array means all branches
-    }
-    
-    // Manager users only have access to their assigned branches
+    // Returns the branch_ids for the logged-in user.
+    // The logic to grant "all access" to admins is handled in the
+    // specific contexts (like BranchProvider and EmployeeProvider)
+    // using the `isAdmin` flag.
     return currentUser.branch_ids || []
   }, [currentUser])
 
