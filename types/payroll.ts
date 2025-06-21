@@ -5,7 +5,7 @@ export interface Employee {
   phone: string
   role: string // Staff role as plain text
   base_salary: number
-  attendance: Record<number, number> // day -> hours (0, 0.25, 0.5, 1)
+  attendance: Record<string, Record<number, number>>
   bonus_days: number // positive adjustments
   penalty_days: number // negative adjustments
   allowed_absent_days: number; // New: For salary calculation

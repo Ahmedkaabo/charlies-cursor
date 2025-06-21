@@ -12,6 +12,7 @@ import { useMemo, useEffect } from "react"
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
+import { Employee } from "@/types/payroll"
 
 export default function DashboardPage() {
   const { t } = useLanguage()
@@ -62,25 +63,61 @@ export default function DashboardPage() {
     const currentYear = new Date().getFullYear()
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
 
-    // Basic counts
+    const calculateTotalAttendedDays = (employee: Employee): number => {
+      if (!employee.attendance) {
+        return 0;
+      }
+      let totalDays = 0;
+      // employee.attendance is Record<string, Record<number, number>>
+      // e.g. { "branch_id_1": { "1": 1, "2": 1 }, "branch_id_2": { "5": 1 } }
+      const branchAttendances = Object.values(employee.attendance);
+      for (const branchAttendance of branchAttendances) {
+        // branchAttendance is Record<number, number>, e.g. { "1": 1, "2": 1 }
+        if (typeof branchAttendance === 'object' && branchAttendance !== null) {
+            const dayValues = Object.values(branchAttendance);
+            for (const value of dayValues) {
+              if (typeof value === 'number') {
+                totalDays += value;
+              }
+            }
+        }
+      }
+      return totalDays;
+    }
+
+    const totalPayroll = employees.reduce((sum, emp) => {
+      // Calculate final salary for each branch the employee works in
+      let employeeTotalSalary = 0;
+      
+      if (emp.branch_ids && emp.branch_ids.length > 0) {
+        // For each branch the employee is assigned to
+        for (const branchId of emp.branch_ids) {
+          const branchAttendance = emp.attendance?.[branchId] || {};
+          const baseAttendedDays = Object.values(branchAttendance).reduce((sum, val) => sum + val, 0);
+          const totalAdjustedDays = baseAttendedDays + (emp.bonus_days || 0) - (emp.penalty_days || 0);
+          const branchSalary = (emp.base_salary / 30) * (totalAdjustedDays + (emp.allowed_absent_days || 0));
+          employeeTotalSalary += branchSalary;
+        }
+      } else {
+        // If no branches assigned, calculate as if they work in one branch
+        const totalAttendedDays = calculateTotalAttendedDays(emp);
+        const totalAdjustedDays = totalAttendedDays + (emp.bonus_days || 0) - (emp.penalty_days || 0);
+        employeeTotalSalary = (emp.base_salary / 30) * (totalAdjustedDays + (emp.allowed_absent_days || 0));
+      }
+      
+      return sum + employeeTotalSalary;
+    }, 0);
+
     const totalEmployees = employees.length
     const totalBranches = branches.length
     const approvedEmployees = employees.filter((emp) => emp.status === "approved").length
     const pendingEmployees = employees.filter((emp) => emp.status === "pending").length
 
-    // Payroll calculations
-    const totalPayroll = employees.reduce((sum, emp) => {
-      const baseAttendedDays = Object.values(emp.attendance || {}).reduce((daySum, val) => daySum + val, 0)
-      const totalAdjustedDays = baseAttendedDays + (emp.bonus_days || 0) - (emp.penalty_days || 0)
-      const finalSalary = (emp.base_salary / 30) * (totalAdjustedDays + 4) // +4 for weekends
-      return sum + finalSalary
-    }, 0)
-
-    // Attendance calculations
     const attendanceData = employees.map((emp) => {
-      const attendedDays = Object.values(emp.attendance || {}).reduce((sum, val) => sum + val, 0)
-      const attendanceRate = (attendedDays / daysInMonth) * 100
-      return { ...emp, attendanceRate, attendedDays }
+      const totalAttendedDays = calculateTotalAttendedDays(emp)
+      const potentialWorkDays = daysInMonth * (emp.branch_ids?.length || 1)
+      const attendanceRate = potentialWorkDays > 0 ? (totalAttendedDays / potentialWorkDays) * 100 : 0
+      return { ...emp, attendanceRate, attendedDays: totalAttendedDays }
     })
 
     const averageAttendance =
@@ -88,7 +125,6 @@ export default function DashboardPage() {
         ? attendanceData.reduce((sum, emp) => sum + emp.attendanceRate, 0) / attendanceData.length
         : 0
 
-    // Role distribution
     const roleDistribution = employees.reduce(
       (acc, emp) => {
         acc[emp.role] = (acc[emp.role] || 0) + 1
@@ -97,7 +133,6 @@ export default function DashboardPage() {
       {} as Record<string, number>,
     )
 
-    // Branch distribution
     const branchDistribution = employees.reduce(
       (acc, emp) => {
         (emp.branch_ids || []).forEach((branchId) => {
@@ -111,28 +146,23 @@ export default function DashboardPage() {
       {} as Record<string, number>,
     )
 
-    // Attendance by role
-    const attendanceByRole = employees.reduce(
+    const attendanceByRole = attendanceData.reduce(
       (acc, emp) => {
-        const attendedDays = Object.values(emp.attendance || {}).reduce((sum, val) => sum + val, 0)
-        const attendanceRate = (attendedDays / daysInMonth) * 100
-
         if (!acc[emp.role]) {
-          acc[emp.role] = { total: 0, count: 0 }
+          acc[emp.role] = { totalRate: 0, count: 0 }
         }
-        acc[emp.role].total += attendanceRate
+        acc[emp.role].totalRate += emp.attendanceRate
         acc[emp.role].count += 1
         return acc
       },
-      {} as Record<string, { total: number; count: number }>,
+      {} as Record<string, { totalRate: number; count: number }>,
     )
+    
+    const finalAttendanceByRole: Record<string, number> = {}
+    for (const role in attendanceByRole) {
+      finalAttendanceByRole[role] = attendanceByRole[role].totalRate / attendanceByRole[role].count
+    }
 
-    // Convert to averages
-    Object.keys(attendanceByRole).forEach((role) => {
-      attendanceByRole[role] = attendanceByRole[role].count > 0 ? attendanceByRole[role].total / attendanceByRole[role].count : 0
-    })
-
-    // Recent activity (employees with low attendance)
     const recentActivity = attendanceData
       .filter((emp) => emp.attendanceRate < 80)
       .sort((a, b) => a.attendanceRate - b.attendanceRate)
@@ -148,7 +178,7 @@ export default function DashboardPage() {
       roleDistribution,
       branchDistribution,
       recentActivity,
-      attendanceByRole,
+      attendanceByRole: finalAttendanceByRole,
     }
   }, [employees, branches, employeesLoading, branchesLoading])
 
@@ -229,7 +259,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {stats.totalPayroll.toFixed(0)} {t("egp")}
+                {Math.ceil(stats.totalPayroll / 5) * 5} {t("egp")}
               </div>
               <p className="text-xs text-muted-foreground">{t("estimatedForCurrentMonth")}</p>
             </CardContent>
@@ -358,7 +388,7 @@ export default function DashboardPage() {
               ) : (
                 <div className="space-y-3">
                   {stats.recentActivity.map((emp) => (
-                    <div key={emp.id} className="flex items-center justify-between p-2 bg-orange-50 rounded-lg">
+                    <div key={emp.id} className="flex items-center justify-between p-2 bg-orange-50 rounded-lg dark:bg-orange-900/50">
                       <div>
                         <p className="text-sm font-medium">
                           {emp.first_name} {emp.last_name}
@@ -366,7 +396,7 @@ export default function DashboardPage() {
                         <p className="text-xs text-muted-foreground">{t(emp.role)}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium text-orange-600">{emp.attendanceRate.toFixed(1)}%</p>
+                        <p className="text-sm font-medium text-orange-600 dark:text-orange-400">{emp.attendanceRate.toFixed(1)}%</p>
                         <p className="text-xs text-muted-foreground">
                           {emp.attendedDays} {t("days")}
                         </p>

@@ -75,13 +75,17 @@ export default function PayrollPage() {
     }
   }, [branches, selectedBranch])
 
-  const handleEmployeeUpdate = (id: string, updates: Partial<Employee>) => {
-    updateEmployee(id, updates)
+  const handleEmployeeUpdate = (employeeId: string, updates: Partial<Employee>) => {
+    // The logic to merge attendance is now handled within each dialog component
+    // before calling onEmployeeUpdate.
+    updateEmployee(employeeId, updates);
   }
 
   const handleExport = () => {
+    if (!selectedBranch) return
     const exportData = employeesForPayroll.map((emp) => {
-      const baseAttendedDays = Object.values(emp.attendance).reduce((sum, val) => sum + val, 0)
+      const branchAttendance = emp.attendance?.[selectedBranch.id] || {}
+      const baseAttendedDays = Object.values(branchAttendance).reduce((sum: number, val: number) => sum + val, 0)
       const totalAdjustedDays = baseAttendedDays + emp.bonus_days - emp.penalty_days
       const finalSalary = (emp.base_salary / 30) * (totalAdjustedDays + (emp.allowed_absent_days || 0))
 
@@ -187,7 +191,11 @@ export default function PayrollPage() {
                 {t("export")}
               </Button>
               {(isAdmin || isManager) && (
-                <BulkAttendanceDialog employees={employeesForPayroll} onEmployeeUpdate={handleEmployeeUpdate} />
+                <BulkAttendanceDialog 
+                  employees={employeesForPayroll} 
+                  onEmployeeUpdate={handleEmployeeUpdate}
+                  branchId={selectedBranch?.id} 
+                />
               )}
             </div>
           </div>
@@ -199,6 +207,7 @@ export default function PayrollPage() {
           year={selectedYear}
           onEmployeeUpdate={handleEmployeeUpdate}
           onExport={handleExport}
+          branchId={selectedBranch?.id}
         />
       </div>
     </div>

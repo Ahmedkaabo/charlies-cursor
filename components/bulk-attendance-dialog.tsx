@@ -23,9 +23,10 @@ import { Users, Check, X } from "lucide-react"
 interface BulkAttendanceDialogProps {
   employees: Employee[]
   onEmployeeUpdate: (id: string, updates: Partial<Employee>) => void
+  branchId?: string
 }
 
-export function BulkAttendanceDialog({ employees, onEmployeeUpdate }: BulkAttendanceDialogProps) {
+export function BulkAttendanceDialog({ employees, onEmployeeUpdate, branchId }: BulkAttendanceDialogProps) {
   const { t, language } = useLanguage()
   const { isAdmin, isManager } = useAuth()
   const [open, setOpen] = useState(false)
@@ -63,8 +64,9 @@ export function BulkAttendanceDialog({ employees, onEmployeeUpdate }: BulkAttend
   }
 
   const getAttendanceStatus = (employee: Employee) => {
-    const attendance = employee.attendance || {}
-    return attendance[targetDay] ?? 0
+    if (!branchId) return 0
+    const branchAttendance = employee.attendance?.[branchId] || {}
+    return branchAttendance[targetDay] ?? 0
   }
 
   const handleEmployeeSelect = (employeeId: string, checked: boolean) => {
@@ -78,11 +80,13 @@ export function BulkAttendanceDialog({ employees, onEmployeeUpdate }: BulkAttend
   }
 
   const handleBulkAttendance = (status: number) => {
+    if (!branchId) return
     selectedEmployees.forEach((employeeId) => {
       const employee = currentMonthEmployees.find((emp) => emp.id === employeeId)
       if (employee) {
-        const newAttendance = { ...employee.attendance, [targetDay]: status }
-        onEmployeeUpdate(employeeId, { attendance: newAttendance })
+        const newBranchAttendance = { ...(employee.attendance?.[branchId] || {}), [targetDay]: status };
+        const newFullAttendance = { ...employee.attendance, [branchId]: newBranchAttendance };
+        onEmployeeUpdate(employeeId, { attendance: newFullAttendance });
       }
     })
     setSelectedEmployees([])
@@ -99,8 +103,13 @@ export function BulkAttendanceDialog({ employees, onEmployeeUpdate }: BulkAttend
   
   const isRTL = language === "ar"
   
-  if (!canEdit) {
-    return null
+  if (!canEdit || !branchId) {
+    return (
+        <Button variant="outline" className="gap-2" disabled>
+          <Users className="h-4 w-4" />
+          {t("bulkAttendance")}
+        </Button>
+    )
   }
 
   return (

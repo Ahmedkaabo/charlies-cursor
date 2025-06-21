@@ -13,9 +13,10 @@ interface PayrollTableProps {
   year: number
   onEmployeeUpdate: (id: string, updates: Partial<Employee>) => void
   onExport: () => void
+  branchId?: string
 }
 
-export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExport }: PayrollTableProps) {
+export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExport, branchId }: PayrollTableProps) {
   const { t, language } = useLanguage()
   const { isAdmin } = useAuth()
 
@@ -36,7 +37,9 @@ export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExpor
   }
 
   const calculateFinalSalary = (employee: Employee) => {
-    const baseAttendedDays = calculateBaseAttendedDays(employee.attendance)
+    if (!branchId) return 0
+    const branchAttendance = employee.attendance?.[branchId] || {}
+    const baseAttendedDays = Object.values(branchAttendance).reduce((sum, val) => sum + val, 0)
     const totalAdjustedDays = baseAttendedDays + employee.bonus_days - employee.penalty_days
     return (employee.base_salary / 30) * (totalAdjustedDays + (employee.allowed_absent_days || 0))
   }
@@ -90,10 +93,11 @@ export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExpor
                       month={month}
                       year={year}
                       onEmployeeUpdate={onEmployeeUpdate}
+                      branchId={branchId}
                     />
                   </TableCell>
                   <TableCell className={`font-semibold text-sm whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
-                    {calculateBaseAttendedDays(employee.attendance).toFixed(2)}
+                    {branchId ? calculateBaseAttendedDays(employee.attendance?.[branchId] || {}).toFixed(2) : "N/A"}
                   </TableCell>
                   <TableCell className={`font-semibold text-sm whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
                     <div className="flex flex-col">

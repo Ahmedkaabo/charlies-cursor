@@ -24,9 +24,10 @@ interface AttendanceDialogProps {
   month: number
   year: number
   onEmployeeUpdate: (id: string, updates: Partial<Employee>) => void
+  branchId?: string
 }
 
-export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: AttendanceDialogProps) {
+export function AttendanceDialog({ employee, month, year, onEmployeeUpdate, branchId }: AttendanceDialogProps) {
   const { t, language } = useLanguage()
   const { isAdmin, isManager } = useAuth()
   const [open, setOpen] = useState(false)
@@ -39,7 +40,8 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: At
 
   const getSummary = () => {
     const daysInMonth = new Date(year, month + 1, 0).getDate()
-    const baseAttendedDays = calculateBaseAttendedDays(employee.attendance)
+    const branchAttendance = (branchId && employee.attendance?.[branchId]) || {}
+    const baseAttendedDays = calculateBaseAttendedDays(branchAttendance)
     const totalAdjustedDays = baseAttendedDays + employee.bonus_days - employee.penalty_days
     const absentDays = daysInMonth - baseAttendedDays
 
@@ -50,9 +52,11 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: At
   const isRTL = language === "ar"
 
   const handleAttendanceChange = (day: number, value: number) => {
-    if (!canEdit) return
-    const newAttendance = { ...employee.attendance, [day]: value }
-    onEmployeeUpdate(employee.id, { attendance: newAttendance })
+    if (!canEdit || !branchId) return
+    const currentBranchAttendance = employee.attendance?.[branchId] || {}
+    const newBranchAttendance = { ...currentBranchAttendance, [day]: value }
+    const newFullAttendance = { ...employee.attendance, [branchId]: newBranchAttendance }
+    onEmployeeUpdate(employee.id, { attendance: newFullAttendance })
   }
 
   const adjustBonusDays = (amount: number) => {
@@ -70,9 +74,9 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: At
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button variant="outline" size="sm" className="gap-2" disabled={!branchId}>
           {canEdit ? <Calendar className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          {calculateBaseAttendedDays(employee.attendance).toFixed(1)} {t("days")}
+          {(branchId && calculateBaseAttendedDays(employee.attendance?.[branchId] || {}).toFixed(1)) || "N/A"} {t("days")}
         </Button>
       </DialogTrigger>
       <DialogContent className="w-[95vw] max-w-2xl h-[90vh] max-h-[90vh] flex flex-col p-0">
@@ -92,10 +96,10 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: At
             <AttendanceCalendar
               month={month}
               year={year}
-              attendance={employee.attendance}
+              attendance={(branchId && employee.attendance?.[branchId]) || {}}
               onChange={handleAttendanceChange}
               startDate={employee.start_date}
-              readOnly={!canEdit}
+              readOnly={!canEdit || !branchId}
             />
 
             {/* Legend */}

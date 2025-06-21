@@ -51,6 +51,9 @@ CREATE TABLE employees (
   role TEXT NOT NULL CHECK (role IN ('barista', 'waiter', 'captin_order', 'helper', 'steward', 'manager')),
   base_salary NUMERIC NOT NULL,
   allowed_absent_days NUMERIC DEFAULT 4,
+  -- Attendance is now a JSONB object where keys are branch_ids
+  -- and values are the attendance records for that branch.
+  -- e.g., {"branch-1": {"1": 1, "2": 0.5}, "branch-2": {"1": 0, "2": 1}}
   attendance JSONB DEFAULT '{}'::jsonb,
   bonus_days NUMERIC DEFAULT 0,
   penalty_days NUMERIC DEFAULT 0,
