@@ -36,7 +36,7 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: At
   const getSummary = () => {
     const daysInMonth = new Date(year, month + 1, 0).getDate()
     const baseAttendedDays = calculateBaseAttendedDays(employee.attendance)
-    const totalAdjustedDays = baseAttendedDays + employee.bonusDays - employee.penaltyDays
+    const totalAdjustedDays = baseAttendedDays + employee.bonus_days - employee.penalty_days
     const absentDays = daysInMonth - baseAttendedDays
 
     return { baseAttendedDays, totalAdjustedDays, absentDays }
@@ -51,13 +51,13 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: At
   }
 
   const adjustBonusDays = (amount: number) => {
-    const newBonusDays = Math.max(0, employee.bonusDays + amount)
-    onEmployeeUpdate(employee.id, { bonusDays: newBonusDays })
+    const newBonusDays = Math.max(0, employee.bonus_days + amount)
+    onEmployeeUpdate(employee.id, { bonus_days: newBonusDays })
   }
 
   const adjustPenaltyDays = (amount: number) => {
-    const newPenaltyDays = Math.max(0, employee.penaltyDays + amount)
-    onEmployeeUpdate(employee.id, { penaltyDays: newPenaltyDays })
+    const newPenaltyDays = Math.max(0, employee.penalty_days + amount)
+    onEmployeeUpdate(employee.id, { penalty_days: newPenaltyDays })
   }
 
   return (
@@ -71,7 +71,7 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: At
       <DialogContent className="w-[95vw] max-w-2xl h-[90vh] max-h-[90vh] flex flex-col p-0">
         <DialogHeader className={`px-4 pt-4 pb-2 border-b ${isRTL ? "text-right" : "text-left"}`}>
           <DialogTitle className="text-lg">
-            {t("attendance")} - {employee.firstName} {employee.lastName}
+            {t("attendance")} - {employee.first_name} {employee.last_name}
           </DialogTitle>
           <DialogDescription className="text-sm">{t("markAttendanceDescription")}</DialogDescription>
         </DialogHeader>
@@ -85,7 +85,7 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: At
               year={year}
               attendance={employee.attendance}
               onChange={handleAttendanceChange}
-              startDate={employee.startDate}
+              startDate={employee.start_date}
             />
 
             {/* Legend */}
@@ -123,7 +123,7 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: At
                     id="bonus"
                     type="number"
                     step="0.25"
-                    value={employee.bonusDays.toFixed(2)}
+                    value={employee.bonus_days.toFixed(2)}
                     readOnly
                     className="flex-1 text-center bg-green-50 border-green-200 text-green-800 focus-visible:ring-0"
                   />
@@ -154,7 +154,7 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: At
                     id="penalty"
                     type="number"
                     step="0.25"
-                    value={employee.penaltyDays.toFixed(2)}
+                    value={employee.penalty_days.toFixed(2)}
                     readOnly
                     className="flex-1 text-center bg-red-50 border-red-200 text-red-800 focus-visible:ring-0"
                   />

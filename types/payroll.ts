@@ -1,17 +1,17 @@
 export interface Employee {
   id: string
-  firstName: string
-  lastName: string
+  first_name: string
+  last_name: string
   phone: string
   role: string // Staff role as plain text
-  baseSalary: number
+  base_salary: number
   attendance: Record<number, number> // day -> hours (0, 0.25, 0.5, 1)
-  bonusDays: number // positive adjustments
-  penaltyDays: number // negative adjustments
+  bonus_days: number // positive adjustments
+  penalty_days: number // negative adjustments
   month: number // Added for attendance calculation context
   year: number // Added for attendance calculation context
-  startDate: string // New: YYYY-MM-DD format
-  branchIds: string[] // New: Array of branch IDs the employee belongs to
+  start_date: string // New: YYYY-MM-DD format
+  branch_ids: string[] // New: Array of branch IDs the employee belongs to
   status: "pending" | "approved" // New: For admin approval workflow
   email?: string // New: Optional email for login
   password?: string // New: Optional password for login (for demo purposes, in real app this would be hashed)
