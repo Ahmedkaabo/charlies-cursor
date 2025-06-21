@@ -82,12 +82,12 @@ export default function PayrollPage() {
   const handleExport = () => {
     const exportData = employeesForPayroll.map((emp) => {
       const baseAttendedDays = Object.values(emp.attendance).reduce((sum, val) => sum + val, 0)
-      const totalAdjustedDays = baseAttendedDays + emp.bonusDays - emp.penaltyDays
-      const finalSalary = (emp.baseSalary / 30) * (totalAdjustedDays + 4)
+      const totalAdjustedDays = baseAttendedDays + emp.bonus_days - emp.penalty_days
+      const finalSalary = (emp.base_salary / 30) * (totalAdjustedDays + 4)
 
       return {
-        firstName: emp.firstName,
-        lastName: emp.lastName,
+        firstName: emp.first_name,
+        lastName: emp.last_name,
         phone: `'${emp.phone}'`,
         amount: finalSalary.toFixed(2),
       }
@@ -110,7 +110,7 @@ export default function PayrollPage() {
   }
 
   const employeesForPayroll = employees
-    .filter((emp) => (selectedBranch ? emp.branchIds.includes(selectedBranch.id) : true))
+    .filter((emp) => (selectedBranch ? (emp.branch_ids || []).includes(selectedBranch.id) : true))
     .map((emp) => ({
       ...emp,
       month: selectedMonth,
