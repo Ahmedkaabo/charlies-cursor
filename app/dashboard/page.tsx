@@ -100,7 +100,7 @@ export default function DashboardPage() {
     // Branch distribution
     const branchDistribution = employees.reduce(
       (acc, emp) => {
-        emp.branchIds.forEach((branchId) => {
+        (emp.branch_ids || []).forEach((branchId) => {
           const branch = branches.find((b) => b.id === branchId)
           if (branch) {
             acc[branch.name] = (acc[branch.name] || 0) + 1
