@@ -11,7 +11,7 @@ interface EmployeeContextType {
   employees: Employee[]
   allEmployees: Employee[] // All employees (for admin use)
   addEmployee: (
-    employeeData: Omit<Employee, "id" | "attendance" | "bonusDays" | "penaltyDays" | "month" | "year" | "status"> & {
+    employeeData: Omit<Employee, "id" | "attendance" | "bonus_days" | "penalty_days" | "month" | "year" | "status"> & {
       email?: string
       password?: string
     },
@@ -78,11 +78,19 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
       return allEmployees
     }
     
-    // Manager users only see employees from their assigned branches
+    // Manager users only see employees from their assigned branches.
+    // If a manager has no branches assigned, show all employees so they can be configured.
     const userBranchIds = getUserBranches()
+    if (userBranchIds.length === 0) {
+      return allEmployees;
+    }
+
     return allEmployees.filter(employee => {
       // Check if employee has any branches that match user's assigned branches
-      return employee.branchIds && employee.branchIds.some(branchId => userBranchIds.includes(branchId))
+      if (employee.branch_ids && employee.branch_ids.length > 0) {
+        return employee.branch_ids.some(branchId => userBranchIds.includes(branchId))
+      }
+      return false
     })
   }, [allEmployees, isAdmin, getUserBranches])
 
@@ -90,7 +98,7 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
     async (
       newEmployeeData: Omit<
         Employee,
-        "id" | "attendance" | "bonusDays" | "penaltyDays" | "month" | "year" | "status"
+        "id" | "attendance" | "bonus_days" | "penalty_days" | "month" | "year" | "status"
       > & { email?: string; password?: string },
       initialStatus?: "pending" | "approved",
     ) => {
@@ -98,10 +106,10 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
 
       const newEmployee: Employee = {
         ...newEmployeeData,
-        id: Date.now().toString(),
+        id: `emp_${Date.now()}`,
         attendance: {},
-        bonusDays: 0,
-        penaltyDays: 0,
+        bonus_days: 0,
+        penalty_days: 0,
         month: new Date().getMonth(),
         year: new Date().getFullYear(),
         status: initialStatus || (isAdmin ? "approved" : "pending"),
@@ -119,6 +127,7 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
             title: "Error",
             description: `Failed to add employee: ${error.message}`,
           })
+          throw error
         } else if (data && data.length > 0) {
           console.log("Successfully added employee:", data[0])
           setAllEmployees((prev) => [...prev, data[0]])
@@ -127,6 +136,7 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
             title: "Success",
             description: "Employee added successfully!",
           })
+          return data[0]
         }
       } catch (err) {
         console.error("Network or other error adding employee:", err)
@@ -135,6 +145,7 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
           title: "Network Error",
           description: `Failed to add employee: ${err}`,
         })
+        throw err
       }
     },
     [isAdmin],
@@ -155,6 +166,7 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
           title: "Error",
           description: `Failed to update employee: ${error.message}`,
         })
+        throw error
       } else if (data) {
         console.log("Successfully updated employee:", data[0])
         setAllEmployees((prev) => prev.map((emp) => (emp.id === id ? { ...emp, ...updates } : emp)))
@@ -163,6 +175,7 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
           title: "Success",
           description: "Employee updated successfully!",
         })
+        return { ...data[0] }
       }
     } catch (err) {
       console.error("Network or other error updating employee:", err)
@@ -171,6 +184,7 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
         title: "Network Error",
         description: `Failed to update employee: ${err}`,
       })
+      throw err
     }
   }, [])
 

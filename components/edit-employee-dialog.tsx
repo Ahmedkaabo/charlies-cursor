@@ -37,13 +37,13 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
   const { updateEmployee } = useEmployee()
   const { branches } = useBranch()
   const [formData, setFormData] = useState({
-    firstName: employee.firstName,
-    lastName: employee.lastName,
+    firstName: employee.first_name,
+    lastName: employee.last_name,
     phone: employee.phone,
     role: employee.role,
-    baseSalary: employee.baseSalary.toString(),
-    startDate: employee.startDate as string | Date,
-    branchIds: employee.branchIds,
+    baseSalary: employee.base_salary.toString(),
+    startDate: employee.start_date as string | Date,
+    branchIds: employee.branch_ids,
     email: employee.email || "", // Include email
     password: employee.password || "", // Include password
   })
@@ -57,13 +57,13 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
   useEffect(() => {
     if (employee) {
       setFormData({
-        firstName: employee.firstName,
-        lastName: employee.lastName,
+        firstName: employee.first_name,
+        lastName: employee.last_name,
         phone: employee.phone,
         role: employee.role,
-        baseSalary: employee.baseSalary.toString(),
-        startDate: employee.startDate,
-        branchIds: employee.branchIds,
+        baseSalary: employee.base_salary.toString(),
+        startDate: employee.start_date,
+        branchIds: employee.branch_ids,
         email: employee.email || "",
         password: employee.password || "",
       })
@@ -84,14 +84,14 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
     ) {
       // Only include email and password if role is manager and they are provided
       const updateData: any = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
         phone: formData.phone,
         role: formData.role,
-        baseSalary: Number.parseFloat(formData.baseSalary),
-        startDate:
+        base_salary: Number.parseFloat(formData.baseSalary),
+        start_date:
           typeof formData.startDate === "string" ? formData.startDate : format(formData.startDate, "yyyy-MM-dd"),
-        branchIds: formData.branchIds,
+        branch_ids: formData.branchIds,
       }
       if (formData.role === "manager") {
         if (formData.email) updateData.email = formData.email

@@ -186,7 +186,7 @@ export default function PayrollPage() {
                 <Download className="h-4 w-4" />
                 {t("export")}
               </Button>
-              {isAdmin && (
+              {(isAdmin || isManager) && (
                 <BulkAttendanceDialog employees={employeesForPayroll} onEmployeeUpdate={handleEmployeeUpdate} />
               )}
             </div>

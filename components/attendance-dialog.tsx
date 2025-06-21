@@ -13,9 +13,10 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Calendar, Plus, Minus } from "lucide-react"
+import { Calendar, Plus, Minus, Eye } from "lucide-react"
 import { AttendanceCalendar } from "./attendance-calendar"
 import { useLanguage } from "@/contexts/language-context"
+import { useAuth } from "@/contexts/auth-context"
 import type { Employee } from "@/types/payroll"
 
 interface AttendanceDialogProps {
@@ -27,7 +28,10 @@ interface AttendanceDialogProps {
 
 export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: AttendanceDialogProps) {
   const { t, language } = useLanguage()
+  const { isAdmin, isManager } = useAuth()
   const [open, setOpen] = useState(false)
+
+  const canEdit = isAdmin || isManager
 
   const calculateBaseAttendedDays = (attendance: Record<number, number>) => {
     return Object.values(attendance).reduce((sum, value) => sum + value, 0)
@@ -46,16 +50,19 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: At
   const isRTL = language === "ar"
 
   const handleAttendanceChange = (day: number, value: number) => {
+    if (!canEdit) return
     const newAttendance = { ...employee.attendance, [day]: value }
     onEmployeeUpdate(employee.id, { attendance: newAttendance })
   }
 
   const adjustBonusDays = (amount: number) => {
+    if (!canEdit) return
     const newBonusDays = Math.max(0, employee.bonus_days + amount)
     onEmployeeUpdate(employee.id, { bonus_days: newBonusDays })
   }
 
   const adjustPenaltyDays = (amount: number) => {
+    if (!canEdit) return
     const newPenaltyDays = Math.max(0, employee.penalty_days + amount)
     onEmployeeUpdate(employee.id, { penalty_days: newPenaltyDays })
   }
@@ -64,7 +71,7 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: At
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
-          <Calendar className="h-4 w-4" />
+          {canEdit ? <Calendar className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           {calculateBaseAttendedDays(employee.attendance).toFixed(1)} {t("days")}
         </Button>
       </DialogTrigger>
@@ -73,7 +80,9 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: At
           <DialogTitle className="text-lg">
             {t("attendance")} - {employee.first_name} {employee.last_name}
           </DialogTitle>
-          <DialogDescription className="text-sm">{t("markAttendanceDescription")}</DialogDescription>
+          <DialogDescription className="text-sm">
+            {canEdit ? t("markAttendanceDescription") : t("viewAttendanceDescription")}
+          </DialogDescription>
         </DialogHeader>
 
         {/* Scrollable content */}
@@ -86,6 +95,7 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: At
               attendance={employee.attendance}
               onChange={handleAttendanceChange}
               startDate={employee.start_date}
+              readOnly={!canEdit}
             />
 
             {/* Legend */}
@@ -111,30 +121,34 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: At
                   {t("bonusDays")}
                 </Label>
                 <div className="flex items-center mt-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => adjustBonusDays(-0.25)}
-                    className={`bg-green-100 border-green-200 text-green-800 hover:bg-green-200 ${isRTL ? "rounded-l-none" : "rounded-r-none"}`}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
+                  {canEdit && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => adjustBonusDays(-0.25)}
+                      className={`bg-green-100 border-green-200 text-green-800 hover:bg-green-200 ${isRTL ? "rounded-l-none" : "rounded-r-none"}`}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Input
                     id="bonus"
                     type="number"
                     step="0.25"
                     value={employee.bonus_days.toFixed(2)}
                     readOnly
-                    className="flex-1 text-center bg-green-50 border-green-200 text-green-800 focus-visible:ring-0"
+                    className={`flex-1 text-center bg-green-50 border-green-200 text-green-800 focus-visible:ring-0 ${!canEdit ? "rounded" : ""}`}
                   />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => adjustBonusDays(0.25)}
-                    className={`bg-green-100 border-green-200 text-green-800 hover:bg-green-200 ${isRTL ? "rounded-r-none" : "rounded-l-none"}`}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
+                  {canEdit && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => adjustBonusDays(0.25)}
+                      className={`bg-green-100 border-green-200 text-green-800 hover:bg-green-200 ${isRTL ? "rounded-r-none" : "rounded-l-none"}`}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
               <div className="p-4 rounded-lg bg-red-50/50 border border-red-200">
@@ -142,30 +156,34 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: At
                   {t("penaltyDays")}
                 </Label>
                 <div className="flex items-center mt-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => adjustPenaltyDays(-0.25)}
-                    className={`bg-red-100 border-red-200 text-red-800 hover:bg-red-200 ${isRTL ? "rounded-l-none" : "rounded-r-none"}`}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
+                  {canEdit && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => adjustPenaltyDays(-0.25)}
+                      className={`bg-red-100 border-red-200 text-red-800 hover:bg-red-200 ${isRTL ? "rounded-l-none" : "rounded-r-none"}`}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Input
                     id="penalty"
                     type="number"
                     step="0.25"
                     value={employee.penalty_days.toFixed(2)}
                     readOnly
-                    className="flex-1 text-center bg-red-50 border-red-200 text-red-800 focus-visible:ring-0"
+                    className={`flex-1 text-center bg-red-50 border-red-200 text-red-800 focus-visible:ring-0 ${!canEdit ? "rounded" : ""}`}
                   />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => adjustPenaltyDays(0.25)}
-                    className={`bg-red-100 border-red-200 text-red-800 hover:bg-red-200 ${isRTL ? "rounded-r-none" : "rounded-l-none"}`}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
+                  {canEdit && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => adjustPenaltyDays(0.25)}
+                      className={`bg-red-100 border-red-200 text-red-800 hover:bg-red-200 ${isRTL ? "rounded-r-none" : "rounded-l-none"}`}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -191,7 +209,7 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate }: At
         {/* Fixed footer */}
         <DialogFooter className="px-4 py-3 border-t bg-background">
           <Button type="button" onClick={() => setOpen(false)} className="w-full sm:w-auto">
-            {t("save")}
+            {canEdit ? t("save") : t("close")}
           </Button>
         </DialogFooter>
       </DialogContent>

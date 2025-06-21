@@ -63,17 +63,18 @@ export function BranchProvider({ children }: { children: React.ReactNode }) {
 
   // Filter branches based on user permissions
   const branches = React.useMemo(() => {
-    if (!currentUser) return []
-    
     if (isAdmin) {
-      // Admin users see all branches
       return allBranches
     }
-    
-    // Manager users only see their assigned branches
+    // For managers, filter branches based on their assigned branch_ids
+    // If a manager has no branches, show all branches so they can be assigned.
     const userBranchIds = getUserBranches()
+    if (userBranchIds.length === 0) {
+      return allBranches;
+    }
+    
     return allBranches.filter(branch => userBranchIds.includes(branch.id))
-  }, [allBranches, currentUser, isAdmin, getUserBranches])
+  }, [allBranches, isAdmin, getUserBranches])
 
   const addBranch = useCallback(async (name: string) => {
     // Simple function to convert a name to a slug-like ID

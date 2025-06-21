@@ -61,16 +61,24 @@ export function ProfileDropdown() {
           </AlertDialogTrigger>
         </DropdownMenuContent>
       </DropdownMenu>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t("areYouSure")}</AlertDialogTitle>
-          <AlertDialogDescription>
+      <AlertDialogContent className="max-w-sm text-center p-6">
+        <AlertDialogHeader className="flex flex-col items-center justify-center text-center">
+          <div className="rounded-full border border-gray-200 p-4 bg-gray-100 mb-4">
+            <LogOut className="h-8 w-8 text-gray-500" />
+          </div>
+          <AlertDialogTitle className="text-2xl font-bold">{t("areYouSure")}</AlertDialogTitle>
+          <AlertDialogDescription className="text-muted-foreground mt-2">
             {t("logoutConfirmation")}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-          <AlertDialogAction onClick={handleLogout}>{t("logout")}</AlertDialogAction>
+        <AlertDialogFooter className="flex sm:justify-center gap-2 mt-6">
+          <AlertDialogCancel className="w-full sm:w-auto px-6 py-2.5">{t("cancel")}</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleLogout}
+            className="w-full sm:w-auto px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white"
+          >
+            {t("logout")}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

@@ -8,9 +8,10 @@ interface AttendanceCalendarProps {
   attendance: Record<number, number>
   onChange: (day: number, value: number) => void
   startDate: string // New prop
+  readOnly?: boolean // New prop for read-only mode
 }
 
-export function AttendanceCalendar({ month, year, attendance, onChange, startDate }: AttendanceCalendarProps) {
+export function AttendanceCalendar({ month, year, attendance, onChange, startDate, readOnly = false }: AttendanceCalendarProps) {
   const { t } = useLanguage()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const employeeStartDate = new Date(startDate)
@@ -27,12 +28,12 @@ export function AttendanceCalendar({ month, year, attendance, onChange, startDat
     } else if (value === 1) {
       // Present (checked)
       baseClasses = "bg-green-100 text-green-800"
-      hoverClasses = "hover:bg-green-200"
+      hoverClasses = readOnly ? "" : "hover:bg-green-200"
       borderClasses = "border-green-200"
     } else {
       // Absent (unchecked)
       baseClasses = "bg-gray-100 text-gray-800"
-      hoverClasses = "hover:bg-gray-200"
+      hoverClasses = readOnly ? "" : "hover:bg-gray-200"
       borderClasses = "border-gray-200"
       if (isWeekend) {
         // Apply specific weekend background only if absent
@@ -57,7 +58,7 @@ export function AttendanceCalendar({ month, year, attendance, onChange, startDat
   }
 
   const handleDayClick = (day: number, isBeforeStartDate: boolean) => {
-    if (isBeforeStartDate) return // Do nothing if before start date
+    if (isBeforeStartDate || readOnly) return // Do nothing if before start date or in read-only mode
 
     const currentValue = attendance[day] || 0
     const newValue = currentValue === 1 ? 0 : 1 // Toggle between 1 (present) and 0 (absent)
@@ -100,9 +101,9 @@ export function AttendanceCalendar({ month, year, attendance, onChange, startDat
               key={day}
               variant="outline"
               size="sm"
-              className={`h-12 w-full p-1 text-sm ${getDayClasses(value, weekend, isBeforeStartDate)} hover:scale-105 transition-transform`}
+              className={`h-12 w-full p-1 text-sm ${getDayClasses(value, weekend, isBeforeStartDate)} ${!readOnly ? "hover:scale-105 transition-transform" : ""}`}
               onClick={() => handleDayClick(day, isBeforeStartDate)}
-              disabled={isBeforeStartDate} // Disable button
+              disabled={isBeforeStartDate || readOnly} // Disable button if before start date or in read-only mode
             >
               <div className="flex flex-col items-center justify-center h-full">
                 <span className="text-xs font-medium pt-1">{day}</span>

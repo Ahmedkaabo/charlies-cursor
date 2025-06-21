@@ -37,8 +37,8 @@ export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExpor
 
   const calculateFinalSalary = (employee: Employee) => {
     const baseAttendedDays = calculateBaseAttendedDays(employee.attendance)
-    const totalAdjustedDays = baseAttendedDays + employee.bonusDays - employee.penaltyDays
-    return (employee.baseSalary / 30) * (totalAdjustedDays + 4)
+    const totalAdjustedDays = baseAttendedDays + employee.bonus_days - employee.penalty_days
+    return (employee.base_salary / 30) * (totalAdjustedDays + 4)
   }
 
   const isRTL = language === "ar"
@@ -74,7 +74,7 @@ export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExpor
                   >
                     <div className="min-w-[180px] whitespace-nowrap">
                       <div className="font-semibold text-sm sm:text-base">
-                        {employee.firstName} {employee.lastName}
+                        {employee.first_name} {employee.last_name}
                       </div>
                       {employee.phone && <div className="text-xs sm:text-sm text-muted-foreground">{employee.phone}</div>}
                     </div>
@@ -97,8 +97,8 @@ export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExpor
                   </TableCell>
                   <TableCell className={`font-semibold text-sm whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
                     <div className="flex flex-col">
-                      <span className="text-green-600">+{employee.bonusDays}</span>
-                      <span className="text-red-600">-{employee.penaltyDays}</span>
+                      <span className="text-green-600">+{employee.bonus_days}</span>
+                      <span className="text-red-600">-{employee.penalty_days}</span>
                     </div>
                   </TableCell>
                   <TableCell className={`font-semibold text-sm whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
