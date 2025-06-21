@@ -76,17 +76,21 @@ export function BranchProvider({ children }: { children: React.ReactNode }) {
   }, [allBranches, currentUser, isAdmin, getUserBranches])
 
   const addBranch = useCallback(async (name: string) => {
-    console.log("Adding branch:", { name })
+    // Simple function to convert a name to a slug-like ID
+    const createSlug = (str: string) => 
+        str.toLowerCase()
+           .trim()
+           .replace(/[^\w\s-]/g, '')
+           .replace(/[\s_-]+/g, '-')
+           .replace(/^-+|-+$/g, '');
 
-    const newBranch: Branch = {
-      id: `branch-${Date.now()}`,
+    const newBranch: Omit<Branch, 'created_at'> = {
+      id: `${createSlug(name)}-branch`,
       name,
     }
 
     try {
-      const { data, error } = await supabase.from("branches").insert([newBranch]).select()
-
-      console.log("Add branch response:", { data, error })
+      const { data, error } = await supabase.from("branches").insert(newBranch).select().single();
 
       if (error) {
         console.error("Error adding branch:", error)
@@ -95,21 +99,20 @@ export function BranchProvider({ children }: { children: React.ReactNode }) {
           title: "Error",
           description: `Failed to add branch: ${error.message}`,
         })
-      } else if (data && data.length > 0) {
-        console.log("Successfully added branch:", data[0])
-        setAllBranches((prev) => [...prev, data[0]])
+      } else if (data) {
+        setAllBranches((prev) => [...prev, data]);
         toast({
           variant: "success",
           title: "Success",
           description: "Branch added successfully!",
         })
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Network or other error adding branch:", err)
       toast({
         variant: "destructive",
         title: "Network Error",
-        description: `Failed to add branch: ${err}`,
+        description: `Failed to add branch: ${err.message}`,
       })
     }
   }, [])
