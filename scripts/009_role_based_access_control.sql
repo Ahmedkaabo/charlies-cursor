@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS users (
   password TEXT NOT NULL,
   branch_ids TEXT[] DEFAULT '{}'::text[],
   role TEXT NOT NULL CHECK (role IN ('admin', 'manager')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  permissions JSONB DEFAULT NULL
 );
 
 -- Disable Row Level Security for demo purposes
@@ -125,4 +126,15 @@ SELECT id, first_name, last_name, role, status, branch_ids FROM employees;
 -- Grant necessary permissions (adjust as needed for your setup)
 -- GRANT ALL PRIVILEGES ON TABLE users TO your_app_user;
 -- GRANT ALL PRIVILEGES ON TABLE branches TO your_app_user;
--- GRANT ALL PRIVILEGES ON TABLE employees TO your_app_user; 
+-- GRANT ALL PRIVILEGES ON TABLE employees TO your_app_user;
+
+-- Create roles table for role-based permissions
+CREATE TABLE IF NOT EXISTS roles (
+  name TEXT PRIMARY KEY, -- e.g., 'admin', 'manager', 'hr', 'viewer'
+  permissions JSONB NOT NULL DEFAULT '{}'::jsonb -- e.g., {"dashboard": true, "payroll": true}
+);
+
+-- Insert default roles with permissions
+INSERT INTO roles (name, permissions) VALUES
+  ('admin', '{"dashboard": true, "payroll": true, "staff": true, "branches": true, "users": true}'),
+  ('manager', '{"payroll": true, "staff": true}'); 

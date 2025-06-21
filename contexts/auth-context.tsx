@@ -4,7 +4,7 @@ import type React from "react"
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
 
-type UserRole = "admin" | "manager" | null // Null when not logged in
+export type UserRole = "admin" | "manager" | "hr" | "viewer" | null
 
 export interface AuthUser {
   id: string;
@@ -14,6 +14,7 @@ export interface AuthUser {
   branch_ids: string[];
   role: UserRole;
   token_version: number;
+  permissions?: Record<string, boolean>;
 }
 
 interface AuthContextType {
@@ -22,9 +23,12 @@ interface AuthContextType {
   isAdmin: boolean;
   isManager: boolean;
   isInitialized: boolean;
+  permissions: Record<string, boolean>;
+  hasPermission: (perm: string) => boolean;
   loginWithCredentials: (email: string, password: string) => Promise<void>;
   logout: () => void;
   getUserBranches: () => string[];
+  getPermission: (module: string, type: 'view' | 'edit') => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -33,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
+  const [permissions, setPermissions] = useState<Record<string, boolean>>({})
 
   const logout = useCallback(() => {
     setCurrentUser(null)
@@ -72,6 +77,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkUserSession();
   }, [logout])
 
+  useEffect(() => {
+    if (!currentUser) {
+      setPermissions({})
+      return
+    }
+    // Prefer user-specific permissions, else load from roles table
+    if (currentUser.permissions) {
+      setPermissions(currentUser.permissions)
+    } else if (currentUser.role) {
+      // Fetch from roles table
+      supabase
+        .from('roles')
+        .select('permissions')
+        .eq('name', currentUser.role)
+        .single()
+        .then(({ data }) => {
+          setPermissions(data?.permissions || {})
+        })
+    }
+  }, [currentUser])
+
+  const hasPermission = useCallback((perm: string) => {
+    return !!permissions[perm]
+  }, [permissions])
+
   const login = useCallback((user: AuthUser) => {
     setCurrentUser(user)
     setIsLoggedIn(true)
@@ -107,6 +137,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAdmin = currentUser?.role === "admin"
   const isManager = currentUser?.role === "manager"
 
+  function getPermission(module: string, type: 'view' | 'edit'): boolean {
+    // Prefer user-specific permissions
+    const userPerm = currentUser?.permissions?.[module]
+    if (userPerm && typeof userPerm === 'object' && userPerm !== null && type in userPerm) {
+      return !!userPerm[type]
+    } else if (typeof userPerm === 'boolean' && type === 'view') {
+      // Legacy: treat boolean as view only
+      return userPerm
+    }
+    // Fallback to role permissions
+    const rolePerm = permissions?.[module]
+    if (rolePerm && typeof rolePerm === 'object' && rolePerm !== null && type in rolePerm) {
+      return !!rolePerm[type]
+    } else if (typeof rolePerm === 'boolean' && type === 'view') {
+      // Legacy: treat boolean as view only
+      return rolePerm
+    }
+    return false
+  }
+
   if (!isInitialized) {
     return null
   }
@@ -118,9 +168,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAdmin, 
       isManager, 
       isInitialized, 
+      permissions,
+      hasPermission,
       loginWithCredentials, 
       logout,
-      getUserBranches 
+      getUserBranches,
+      getPermission
     }}>
       {children}
     </AuthContext.Provider>

@@ -25,14 +25,15 @@ interface AttendanceDialogProps {
   year: number
   onEmployeeUpdate: (id: string, updates: Partial<Employee>) => void
   branchId?: string
+  viewOnly?: boolean
 }
 
-export function AttendanceDialog({ employee, month, year, onEmployeeUpdate, branchId }: AttendanceDialogProps) {
+export function AttendanceDialog({ employee, month, year, onEmployeeUpdate, branchId, viewOnly = false }: AttendanceDialogProps) {
   const { t, language } = useLanguage()
   const { isAdmin, isManager } = useAuth()
   const [open, setOpen] = useState(false)
 
-  const canEdit = isAdmin || isManager
+  const canEdit = (isAdmin || isManager) && !viewOnly
 
   const monthKey: MonthKey = `${year}-${String(month + 1).padStart(2, "0")}`
 

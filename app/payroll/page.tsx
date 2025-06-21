@@ -49,7 +49,7 @@ export default function PayrollPage() {
   const { t, language } = useLanguage()
   const { employees, updateEmployee } = useEmployee()
   const { branches } = useBranch()
-  const [selectedBranch, setSelectedBranch] = useState<Branch | undefined>(undefined)
+  const [selectedBranch, setSelectedBranch] = useState<string>(branches.length > 0 ? branches[0].id : "")
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const { isAdmin, isManager, isInitialized } = useAuth()
@@ -70,8 +70,8 @@ export default function PayrollPage() {
   }
 
   useEffect(() => {
-    if (branches.length > 0 && !selectedBranch) {
-      setSelectedBranch(branches[0])
+    if (branches.length > 0 && (!selectedBranch || !branches.find(b => b.id === selectedBranch))) {
+      setSelectedBranch(branches[0].id)
     }
   }, [branches, selectedBranch])
 
@@ -82,11 +82,16 @@ export default function PayrollPage() {
   }
 
   const handleExport = () => {
-    if (!selectedBranch) return
+    if (selectedBranch === "all") {
+      alert("Export for all branches is not supported. Please select a branch.");
+      return;
+    }
     const exportData = employeesForPayroll.map((emp) => {
-      const branchAttendance = emp.attendance?.[selectedBranch.id] || {}
-      const baseAttendedDays = Object.values(branchAttendance).reduce((sum: number, val: number) => sum + val, 0)
-      const totalAdjustedDays = baseAttendedDays + emp.bonus_days - emp.penalty_days
+      const branchAttendance = emp.attendance?.[selectedBranch] || {}
+      const baseAttendedDays = Object.values(branchAttendance)
+        .filter(val => typeof val === 'number')
+        .reduce((sum, val) => sum + Number(val), 0)
+      const totalAdjustedDays = baseAttendedDays + (emp.bonus_days?.[selectedBranch]?.[`${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`] || 0) - (emp.penalty_days?.[selectedBranch]?.[`${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`] || 0)
       const finalSalary = (emp.base_salary / 30) * (totalAdjustedDays + (emp.allowed_absent_days || 0))
 
       return {
@@ -108,13 +113,13 @@ export default function PayrollPage() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `payroll-${selectedBranch?.name || "all"}-${selectedMonth + 1}-${selectedYear}.csv`
+    a.download = `payroll-${selectedBranch}-${selectedMonth + 1}-${selectedYear}.csv`
     a.click()
     URL.revokeObjectURL(url)
   }
 
   const employeesForPayroll = employees
-    .filter((emp) => (selectedBranch ? (emp.branch_ids || []).includes(selectedBranch.id) : true))
+    .filter((emp) => (selectedBranch ? (emp.branch_ids || []).includes(selectedBranch) : true))
     .filter((emp) => {
       // Only approved
       if (emp.status !== 'approved') return false;
@@ -146,7 +151,7 @@ export default function PayrollPage() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex-1">
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">
-                {t("payroll")} – {selectedBranch ? selectedBranch.name : "All Branches"}
+                {t("payroll")} – {selectedBranch === "all" ? "All Branches" : branches.find(b => b.id === selectedBranch)?.name || t("selectBranch")}
               </h1>
               <p className="text-sm text-muted-foreground mt-1">Manage employee attendance and calculate salaries</p>
             </div>
@@ -159,13 +164,13 @@ export default function PayrollPage() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="gap-2 justify-between w-full sm:w-auto">
-                    <span className="truncate">{selectedBranch ? selectedBranch.name : t("selectBranch")}</span>
+                    <span className="truncate">{branches.find(b => b.id === selectedBranch)?.name || t("selectBranch")}</span>
                     <ChevronDown className="h-4 w-4 shrink-0" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56">
                   {branches.map((branch) => (
-                    <DropdownMenuItem key={branch.id} onClick={() => setSelectedBranch(branch)}>
+                    <DropdownMenuItem key={branch.id} onClick={() => setSelectedBranch(branch.id)}>
                       {branch.name}
                     </DropdownMenuItem>
                   ))}
@@ -213,7 +218,7 @@ export default function PayrollPage() {
                 <BulkAttendanceDialog 
                   employees={employeesForPayroll} 
                   onEmployeeUpdate={handleEmployeeUpdate}
-                  branchId={selectedBranch?.id}
+                  branchId={selectedBranch}
                   month={selectedMonth}
                   year={selectedYear}
                 />
@@ -224,11 +229,11 @@ export default function PayrollPage() {
 
         <PayrollTable
           employees={employeesForPayroll}
-          month={selectedMonth}
-          year={selectedYear}
           onEmployeeUpdate={handleEmployeeUpdate}
           onExport={handleExport}
-          branchId={selectedBranch?.id}
+          branchId={selectedBranch}
+          month={selectedMonth}
+          year={selectedYear}
         />
       </div>
     </div>

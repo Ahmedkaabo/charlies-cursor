@@ -30,7 +30,7 @@ export default function DashboardPage() {
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
-  const [selectedBranch, setSelectedBranch] = useState<string | null>(null)
+  const [selectedBranch, setSelectedBranch] = useState<string | null>("all")
   const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth)
   const [selectedYear] = useState<number>(currentYear)
   const monthYearOptions = Array.from({ length: currentYear === selectedYear ? currentMonth + 1 : 12 }, (_, m) => ({
@@ -264,12 +264,12 @@ export default function DashboardPage() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2 justify-between w-full sm:w-auto">
-                <span>{selectedBranch ? (branches.find(b => b.id === selectedBranch)?.name || t("allBranches")) : t("allBranches")}</span>
+                <span className="truncate">{selectedBranch === "all" ? "All Branches" : branches.find(b => b.id === selectedBranch)?.name || t("selectBranch")}</span>
                 <ChevronDown className="h-4 w-4 shrink-0" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
-              <DropdownMenuItem onClick={() => setSelectedBranch(null)}>{t("allBranches")}</DropdownMenuItem>
+              <DropdownMenuItem value="all" onClick={() => setSelectedBranch("all")}>All Branches</DropdownMenuItem>
               {branches.map((branch) => (
                 <DropdownMenuItem key={branch.id} onClick={() => setSelectedBranch(branch.id)}>
                   {branch.name}
@@ -365,7 +365,7 @@ export default function DashboardPage() {
                 <Users className="h-5 w-5" />
                 {t("staffByRole")}
               </CardTitle>
-              <CardDescription>{t("distributionOfEmployees")}</CardDescription>
+              <CardDescription>{t("Distribution of employees")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {Object.entries(stats.roleDistribution).map(([role, count]) => (
@@ -402,7 +402,7 @@ export default function DashboardPage() {
                   <span className="text-sm font-medium">{branch}</span>
                   <div className="flex items-center gap-2">
                     <span className="text-sm">
-                      {count} {t("employees")}
+                      {count} {t("")}
                     </span>
                     <div className="w-20 bg-gray-200 rounded-full h-2">
                       <div

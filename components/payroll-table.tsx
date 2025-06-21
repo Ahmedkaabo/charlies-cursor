@@ -20,7 +20,7 @@ interface PayrollTableProps {
 
 export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExport, branchId }: PayrollTableProps) {
   const { t, language } = useLanguage()
-  const { isAdmin } = useAuth()
+  const { isAdmin, getPermission } = useAuth()
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null)
 
   const monthKey: MonthKey = `${year}-${String(month + 1).padStart(2, "0")}`
@@ -43,13 +43,10 @@ export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExpor
 
   const calculateFinalSalary = (employee: Employee) => {
     if (!branchId) return 0
-    const branchAttendanceRaw = branchId && employee.attendance?.[branchId]?.[monthKey] ? employee.attendance[branchId][monthKey] : {}
-    const branchAttendance: Record<number, number> = typeof branchAttendanceRaw === 'object' && branchAttendanceRaw !== null ? branchAttendanceRaw : {}
+    const branchAttendance: Record<number, number> = branchId ? (employee.attendance?.[branchId]?.[monthKey] || {}) : {}
     const baseAttendedDays = calculateBaseAttendedDays(branchAttendance)
-    const bonusRaw = branchId && employee.bonus_days?.[branchId]?.[monthKey] ? employee.bonus_days[branchId][monthKey] : 0
-    const penaltyRaw = branchId && employee.penalty_days?.[branchId]?.[monthKey] ? employee.penalty_days[branchId][monthKey] : 0
-    const bonus = typeof bonusRaw === 'number' ? bonusRaw : 0
-    const penalty = typeof penaltyRaw === 'number' ? penaltyRaw : 0
+    const bonus = branchId ? (employee.bonus_days?.[branchId]?.[monthKey] || 0) : 0
+    const penalty = branchId ? (employee.penalty_days?.[branchId]?.[monthKey] || 0) : 0
     const totalAdjustedDays = baseAttendedDays + bonus - penalty
     return (employee.base_salary / 30) * (totalAdjustedDays + (employee.allowed_absent_days || 0))
   }
@@ -72,12 +69,12 @@ export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExpor
           bValue = b.role
           break
         case "attendance":
-          aValue = branchId ? calculateBaseAttendedDays(a.attendance?.[branchId] || 0) : 0
-          bValue = branchId ? calculateBaseAttendedDays(b.attendance?.[branchId] || 0) : 0
+          aValue = branchId ? calculateBaseAttendedDays(a.attendance?.[branchId]?.[monthKey] || {}) : 0
+          bValue = branchId ? calculateBaseAttendedDays(b.attendance?.[branchId]?.[monthKey] || {}) : 0
           break
         case "bonusPenalty":
-          aValue = a.bonus_days - a.penalty_days
-          bValue = b.bonus_days - b.penalty_days
+          aValue = branchId ? ((a.bonus_days?.[branchId]?.[monthKey] || 0) - (a.penalty_days?.[branchId]?.[monthKey] || 0)) : 0
+          bValue = branchId ? ((b.bonus_days?.[branchId]?.[monthKey] || 0) - (b.penalty_days?.[branchId]?.[monthKey] || 0)) : 0
           break
         case "finalSalary":
           aValue = calculateFinalSalary(a)
@@ -171,18 +168,33 @@ export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExpor
                     </Badge>
                   </TableCell>
                   <TableCell className={isRTL ? "text-right" : "text-left"}>
-                    <AttendanceDialog
-                      employee={employee}
-                      month={month}
-                      year={year}
-                      onEmployeeUpdate={onEmployeeUpdate}
-                      branchId={branchId}
-                    />
+                    {branchId ? (
+                      getPermission && getPermission('payroll', 'edit') ? (
+                        <AttendanceDialog
+                          employee={employee}
+                          month={month}
+                          year={year}
+                          onEmployeeUpdate={onEmployeeUpdate}
+                          branchId={branchId}
+                        />
+                      ) : (
+                        <AttendanceDialog
+                          employee={employee}
+                          month={month}
+                          year={year}
+                          onEmployeeUpdate={onEmployeeUpdate}
+                          branchId={branchId}
+                          viewOnly={true}
+                        />
+                      )
+                    ) : (
+                      <span>-</span>
+                    )}
                   </TableCell>
                   <TableCell className={`font-semibold text-sm whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
                     <div className="flex flex-col">
-                      <span className="text-green-600">+{branchId && employee.bonus_days?.[branchId]?.[monthKey] ? employee.bonus_days[branchId][monthKey] : 0}</span>
-                      <span className="text-red-600">-{branchId && employee.penalty_days?.[branchId]?.[monthKey] ? employee.penalty_days[branchId][monthKey] : 0}</span>
+                      <span className="text-green-600">+{branchId ? (employee.bonus_days?.[branchId]?.[monthKey] || 0) : 0}</span>
+                      <span className="text-red-600">-{branchId ? (employee.penalty_days?.[branchId]?.[monthKey] || 0) : 0}</span>
                     </div>
                   </TableCell>
                   <TableCell className={`font-semibold text-sm whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>

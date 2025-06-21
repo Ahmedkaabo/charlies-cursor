@@ -22,58 +22,39 @@ import { useAuth } from "@/contexts/auth-context" // Import useAuth
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {} // Define props interface
 
+const rolePermissions: Record<string, string[]> = {
+  admin: ["dashboard", "payroll", "staff", "branches", "users", "roles"],
+  manager: ["payroll", "staff"],
+  // Add more roles and their permissions here
+}
+
 export function AppSidebar({ ...props }: AppSidebarProps) {
-  // Use the defined props interface
   const { t } = useLanguage()
-  const { isAdmin, isManager } = useAuth() // Get user roles
-  const { isMobile, setOpenMobile } = useSidebar() // Get isMobile and setOpenMobile
+  const { isAdmin, isManager, currentUser, hasPermission } = useAuth() // Get user roles and current user
+  const { isMobile, setOpenMobile } = useSidebar()
+
+  const userRole = currentUser?.role || "viewer"
+  const allowedPages = rolePermissions[userRole] || []
 
   const allNavItems = [
-    {
-      title: "dashboard",
-      url: "/dashboard",
-      icon: BarChart3,
-    },
-    {
-      title: "payroll",
-      url: "/payroll",
-      icon: Calendar,
-    },
-    {
-      title: "staff",
-      url: "/staff",
-      icon: Users,
-    },
-    {
-      title: "branches",
-      url: "/branches",
-      icon: GitBranch,
-      role: "admin", // only for admin
-    },
-    {
-      title: "users",
-      url: "/users",
-      icon: UserCog,
-      role: "admin", // only for admin
-    },
+    { title: "dashboard", url: "/dashboard", icon: BarChart3 },
+    { title: "payroll", url: "/payroll", icon: Calendar },
+    { title: "staff", url: "/staff", icon: Users },
+    { title: "branches", url: "/branches", icon: GitBranch },
+    { title: "users", url: "/users", icon: UserCog },
+    { title: "Roles", url: "/roles", icon: UserCog },
   ]
 
-  const navigationItems = allNavItems.filter(item => {
-    if (isAdmin) return true;
-    if (isManager && (item.title === 'payroll' || item.title === 'staff')) return true;
-    return !item.role; // Show items with no specific role assigned
-  })
+  const navigationItems = allNavItems.filter(item => hasPermission(item.title.toLowerCase()))
 
   const handleMenuItemClick = () => {
     if (isMobile) {
-      setOpenMobile(false) // Close sidebar on mobile when a menu item is clicked
+      setOpenMobile(false)
     }
   }
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      {" "}
-      {/* Pass all props, including 'side' */}
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -96,18 +77,16 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationItems.map((item) => {
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <Link href={item.url} onClick={handleMenuItemClick}>
-                        <item.icon />
-                        <span>{t(item.title)}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              })}
+              {navigationItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <Link href={item.url} onClick={handleMenuItemClick}>
+                      <item.icon />
+                      <span>{t(item.title)}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
