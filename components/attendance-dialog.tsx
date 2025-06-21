@@ -17,7 +17,7 @@ import { Calendar, Plus, Minus, Eye } from "lucide-react"
 import { AttendanceCalendar } from "./attendance-calendar"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
-import type { Employee } from "@/types/payroll"
+import type { Employee, MonthKey } from "@/types/payroll"
 
 interface AttendanceDialogProps {
   employee: Employee
@@ -34,17 +34,21 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate, bran
 
   const canEdit = isAdmin || isManager
 
+  const monthKey: MonthKey = `${year}-${String(month + 1).padStart(2, "0")}`
+
+  const branchAttendance = branchId && employee.attendance?.[branchId]?.[monthKey] ? employee.attendance[branchId][monthKey] : {}
+  const bonus = branchId && employee.bonus_days?.[branchId]?.[monthKey] ? employee.bonus_days[branchId][monthKey] : 0
+  const penalty = branchId && employee.penalty_days?.[branchId]?.[monthKey] ? employee.penalty_days[branchId][monthKey] : 0
+
   const calculateBaseAttendedDays = (attendance: Record<number, number>) => {
     return Object.values(attendance).reduce((sum, value) => sum + value, 0)
   }
 
   const getSummary = () => {
     const daysInMonth = new Date(year, month + 1, 0).getDate()
-    const branchAttendance = (branchId && employee.attendance?.[branchId]) || {}
     const baseAttendedDays = calculateBaseAttendedDays(branchAttendance)
-    const totalAdjustedDays = baseAttendedDays + employee.bonus_days - employee.penalty_days
+    const totalAdjustedDays = baseAttendedDays + bonus - penalty
     const absentDays = daysInMonth - baseAttendedDays
-
     return { baseAttendedDays, totalAdjustedDays, absentDays }
   }
 
@@ -53,22 +57,47 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate, bran
 
   const handleAttendanceChange = (day: number, value: number) => {
     if (!canEdit || !branchId) return
-    const currentBranchAttendance = employee.attendance?.[branchId] || {}
-    const newBranchAttendance = { ...currentBranchAttendance, [day]: value }
-    const newFullAttendance = { ...employee.attendance, [branchId]: newBranchAttendance }
+    const prev = employee.attendance?.[branchId]?.[monthKey] || {}
+    const newMonthAttendance = { ...prev, [day]: value }
+    const newBranchAttendance = {
+      ...(employee.attendance?.[branchId] || {}),
+      [monthKey]: newMonthAttendance,
+    }
+    const newFullAttendance = {
+      ...employee.attendance,
+      [branchId]: newBranchAttendance,
+    }
     onEmployeeUpdate(employee.id, { attendance: newFullAttendance })
   }
 
   const adjustBonusDays = (amount: number) => {
-    if (!canEdit) return
-    const newBonusDays = Math.max(0, employee.bonus_days + amount)
-    onEmployeeUpdate(employee.id, { bonus_days: newBonusDays })
+    if (!canEdit || !branchId) return
+    const prev = employee.bonus_days?.[branchId]?.[monthKey] || 0
+    const newBonus = Math.max(0, prev + amount)
+    const newBranchBonus = {
+      ...(employee.bonus_days?.[branchId] || {}),
+      [monthKey]: newBonus,
+    }
+    const newFullBonus = {
+      ...employee.bonus_days,
+      [branchId]: newBranchBonus,
+    }
+    onEmployeeUpdate(employee.id, { bonus_days: newFullBonus })
   }
 
   const adjustPenaltyDays = (amount: number) => {
-    if (!canEdit) return
-    const newPenaltyDays = Math.max(0, employee.penalty_days + amount)
-    onEmployeeUpdate(employee.id, { penalty_days: newPenaltyDays })
+    if (!canEdit || !branchId) return
+    const prev = employee.penalty_days?.[branchId]?.[monthKey] || 0
+    const newPenalty = Math.max(0, prev + amount)
+    const newBranchPenalty = {
+      ...(employee.penalty_days?.[branchId] || {}),
+      [monthKey]: newPenalty,
+    }
+    const newFullPenalty = {
+      ...employee.penalty_days,
+      [branchId]: newBranchPenalty,
+    }
+    onEmployeeUpdate(employee.id, { penalty_days: newFullPenalty })
   }
 
   return (
@@ -76,7 +105,7 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate, bran
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2" disabled={!branchId}>
           {canEdit ? <Calendar className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          {(branchId && calculateBaseAttendedDays(employee.attendance?.[branchId] || {}).toFixed(1)) || "N/A"} {t("days")}
+          {(branchId && calculateBaseAttendedDays(branchAttendance).toFixed(1)) || "N/A"} {t("days")}
         </Button>
       </DialogTrigger>
       <DialogContent className="w-[95vw] max-w-2xl h-[90vh] max-h-[90vh] flex flex-col p-0">
@@ -96,7 +125,7 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate, bran
             <AttendanceCalendar
               month={month}
               year={year}
-              attendance={(branchId && employee.attendance?.[branchId]) || {}}
+              attendance={branchAttendance}
               onChange={handleAttendanceChange}
               startDate={employee.start_date}
               readOnly={!canEdit || !branchId}
@@ -139,7 +168,7 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate, bran
                     id="bonus"
                     type="number"
                     step="0.25"
-                    value={employee.bonus_days.toFixed(2)}
+                    value={bonus.toFixed(2)}
                     readOnly
                     className={`flex-1 text-center bg-green-50 border-green-200 text-green-800 focus-visible:ring-0 ${!canEdit ? "rounded" : ""}`}
                   />
@@ -174,7 +203,7 @@ export function AttendanceDialog({ employee, month, year, onEmployeeUpdate, bran
                     id="penalty"
                     type="number"
                     step="0.25"
-                    value={employee.penalty_days.toFixed(2)}
+                    value={penalty.toFixed(2)}
                     readOnly
                     className={`flex-1 text-center bg-red-50 border-red-200 text-red-800 focus-visible:ring-0 ${!canEdit ? "rounded" : ""}`}
                   />

@@ -17,16 +17,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
-import type { Employee } from "@/types/payroll"
+import type { Employee, MonthKey } from "@/types/payroll"
 import { Users, Check, X } from "lucide-react"
 
 interface BulkAttendanceDialogProps {
   employees: Employee[]
   onEmployeeUpdate: (id: string, updates: Partial<Employee>) => void
   branchId?: string
+  month: number
+  year: number
 }
 
-export function BulkAttendanceDialog({ employees, onEmployeeUpdate, branchId }: BulkAttendanceDialogProps) {
+export function BulkAttendanceDialog({ employees, onEmployeeUpdate, branchId, month, year }: BulkAttendanceDialogProps) {
   const { t, language } = useLanguage()
   const { isAdmin, isManager } = useAuth()
   const [open, setOpen] = useState(false)
@@ -42,6 +44,8 @@ export function BulkAttendanceDialog({ employees, onEmployeeUpdate, branchId }: 
 
   const targetDate = selectedDate === "today" ? today : yesterday
   const targetDay = targetDate.getDate()
+
+  const monthKey: MonthKey = `${year}-${String(month + 1).padStart(2, "0")}`
 
   const currentMonthEmployees = useMemo(() => {
     return employees.filter((emp) => {
@@ -65,7 +69,7 @@ export function BulkAttendanceDialog({ employees, onEmployeeUpdate, branchId }: 
 
   const getAttendanceStatus = (employee: Employee) => {
     if (!branchId) return 0
-    const branchAttendance = employee.attendance?.[branchId] || {}
+    const branchAttendance = employee.attendance?.[branchId]?.[monthKey] || {}
     return branchAttendance[targetDay] ?? 0
   }
 
@@ -84,8 +88,16 @@ export function BulkAttendanceDialog({ employees, onEmployeeUpdate, branchId }: 
     selectedEmployees.forEach((employeeId) => {
       const employee = currentMonthEmployees.find((emp) => emp.id === employeeId)
       if (employee) {
-        const newBranchAttendance = { ...(employee.attendance?.[branchId] || {}), [targetDay]: status };
-        const newFullAttendance = { ...employee.attendance, [branchId]: newBranchAttendance };
+        const prev = employee.attendance?.[branchId]?.[monthKey] || {}
+        const newMonthAttendance = { ...prev, [targetDay]: status }
+        const newBranchAttendance = {
+          ...(employee.attendance?.[branchId] || {}),
+          [monthKey]: newMonthAttendance,
+        }
+        const newFullAttendance = {
+          ...employee.attendance,
+          [branchId]: newBranchAttendance,
+        }
         onEmployeeUpdate(employeeId, { attendance: newFullAttendance });
       }
     })

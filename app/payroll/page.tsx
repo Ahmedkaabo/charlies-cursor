@@ -123,6 +123,11 @@ export default function PayrollPage() {
 
   const currentMonth = new Date().getMonth()
   const currentYear = new Date().getFullYear()
+  const monthYearOptions = Array.from({ length: 12 }, (_, m) => ({
+    label: `${language === "ar" ? monthsAr[m] : months[m]} ${selectedYear}`,
+    month: m,
+    year: selectedYear,
+  }))
 
   return (
     <div className="flex-1 flex flex-col min-h-screen">
@@ -138,7 +143,7 @@ export default function PayrollPage() {
             </div>
           </div>
 
-          {/* Branch and Month Selectors */}
+          {/* Branch and Month/Year Selectors */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             {/* Left side - Filters */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -158,6 +163,7 @@ export default function PayrollPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              {/* Month/Year Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="gap-2 justify-between w-full sm:w-auto">
@@ -168,16 +174,12 @@ export default function PayrollPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  {(language === "ar" ? monthsAr : months).map((month, index) => (
+                  {monthYearOptions.map((opt, idx) => (
                     <DropdownMenuItem
-                      key={index}
-                      onClick={() => {
-                        setSelectedMonth(index)
-                        setSelectedYear(selectedYear)
-                      }}
-                      disabled={index !== currentMonth || selectedYear !== currentYear}
+                      key={idx}
+                      onClick={() => setSelectedMonth(opt.month)}
                     >
-                      {month} {selectedYear}
+                      {opt.label}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -194,7 +196,9 @@ export default function PayrollPage() {
                 <BulkAttendanceDialog 
                   employees={employeesForPayroll} 
                   onEmployeeUpdate={handleEmployeeUpdate}
-                  branchId={selectedBranch?.id} 
+                  branchId={selectedBranch?.id}
+                  month={selectedMonth}
+                  year={selectedYear}
                 />
               )}
             </div>

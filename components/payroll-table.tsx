@@ -3,9 +3,11 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
-import type { Employee } from "@/types/payroll"
+import type { Employee, MonthKey } from "@/types/payroll"
 import { formatSalary } from "@/lib/utils"
 import { AttendanceDialog } from "./attendance-dialog"
+import { useState } from "react"
+import { ArrowUp, ArrowDown } from "lucide-react"
 
 interface PayrollTableProps {
   employees: Employee[]
@@ -19,6 +21,9 @@ interface PayrollTableProps {
 export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExport, branchId }: PayrollTableProps) {
   const { t, language } = useLanguage()
   const { isAdmin } = useAuth()
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null)
+
+  const monthKey: MonthKey = `${year}-${String(month + 1).padStart(2, "0")}`
 
   const getRoleBadgeColor = (role: string) => {
     const colors: { [key: string]: string } = {
@@ -38,13 +43,65 @@ export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExpor
 
   const calculateFinalSalary = (employee: Employee) => {
     if (!branchId) return 0
-    const branchAttendance = employee.attendance?.[branchId] || {}
-    const baseAttendedDays = Object.values(branchAttendance).reduce((sum, val) => sum + val, 0)
-    const totalAdjustedDays = baseAttendedDays + employee.bonus_days - employee.penalty_days
+    const branchAttendanceRaw = branchId && employee.attendance?.[branchId]?.[monthKey] ? employee.attendance[branchId][monthKey] : {}
+    const branchAttendance: Record<number, number> = typeof branchAttendanceRaw === 'object' && branchAttendanceRaw !== null ? branchAttendanceRaw : {}
+    const baseAttendedDays = calculateBaseAttendedDays(branchAttendance)
+    const bonusRaw = branchId && employee.bonus_days?.[branchId]?.[monthKey] ? employee.bonus_days[branchId][monthKey] : 0
+    const penaltyRaw = branchId && employee.penalty_days?.[branchId]?.[monthKey] ? employee.penalty_days[branchId][monthKey] : 0
+    const bonus = typeof bonusRaw === 'number' ? bonusRaw : 0
+    const penalty = typeof penaltyRaw === 'number' ? penaltyRaw : 0
+    const totalAdjustedDays = baseAttendedDays + bonus - penalty
     return (employee.base_salary / 30) * (totalAdjustedDays + (employee.allowed_absent_days || 0))
   }
 
   const isRTL = language === "ar"
+
+  const getSortedEmployees = () => {
+    if (!sortConfig) return employees
+    const sorted = [...employees]
+    sorted.sort((a, b) => {
+      let aValue: any
+      let bValue: any
+      switch (sortConfig.key) {
+        case "employeeName":
+          aValue = `${a.first_name} ${a.last_name}`.toLowerCase()
+          bValue = `${b.first_name} ${b.last_name}`.toLowerCase()
+          break
+        case "role":
+          aValue = a.role
+          bValue = b.role
+          break
+        case "attendance":
+          aValue = branchId ? calculateBaseAttendedDays(a.attendance?.[branchId] || 0) : 0
+          bValue = branchId ? calculateBaseAttendedDays(b.attendance?.[branchId] || 0) : 0
+          break
+        case "bonusPenalty":
+          aValue = a.bonus_days - a.penalty_days
+          bValue = b.bonus_days - b.penalty_days
+          break
+        case "finalSalary":
+          aValue = calculateFinalSalary(a)
+          bValue = calculateFinalSalary(b)
+          break
+        default:
+          aValue = 0
+          bValue = 0
+      }
+      if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1
+      if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1
+      return 0
+    })
+    return sorted
+  }
+
+  const handleSort = (key: string) => {
+    setSortConfig((prev) => {
+      if (prev?.key === key) {
+        return { key, direction: prev.direction === "asc" ? "desc" : "asc" }
+      }
+      return { key, direction: "asc" }
+    })
+  }
 
   return (
     <div className="space-y-4">
@@ -54,26 +111,52 @@ export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExpor
             <TableHeader>
               <TableRow>
                 <TableHead
-                  className={`min-w-[180px] sticky ${isRTL ? "right-0" : "left-0"} bg-background z-10 ${
-                    isRTL ? "text-right" : "text-left"
-                  }`}
+                  className={`min-w-[180px] sticky ${isRTL ? "right-0" : "left-0"} bg-background z-10 ${isRTL ? "text-right" : "text-left"}`}
+                  onClick={() => handleSort("employeeName")}
+                  style={{ cursor: "pointer" }}
                 >
                   {t("employeeName")}
+                  {sortConfig?.key === "employeeName" && (sortConfig.direction === "asc" ? <ArrowUp className="inline ml-1 w-4 h-4" /> : <ArrowDown className="inline ml-1 w-4 h-4" />)}
                 </TableHead>
-                <TableHead className={isRTL ? "text-right" : "text-left"}>{t("role")}</TableHead>
-                <TableHead className={isRTL ? "text-right" : "text-left"}>{t("attendance")}</TableHead>
-                <TableHead className={isRTL ? "text-right" : "text-left"}>{t("totalDays")}</TableHead>
-                <TableHead className={isRTL ? "text-right" : "text-left"}>{t("bonusPenalty")}</TableHead>
-                <TableHead className={isRTL ? "text-right" : "text-left"}>{t("finalSalary")}</TableHead>
+                <TableHead
+                  className={isRTL ? "text-right" : "text-left"}
+                  onClick={() => handleSort("role")}
+                  style={{ cursor: "pointer" }}
+                >
+                  {t("role")}
+                  {sortConfig?.key === "role" && (sortConfig.direction === "asc" ? <ArrowUp className="inline ml-1 w-4 h-4" /> : <ArrowDown className="inline ml-1 w-4 h-4" />)}
+                </TableHead>
+                <TableHead
+                  className={isRTL ? "text-right" : "text-left"}
+                  onClick={() => handleSort("attendance")}
+                  style={{ cursor: "pointer" }}
+                >
+                  {t("attendance")}
+                  {sortConfig?.key === "attendance" && (sortConfig.direction === "asc" ? <ArrowUp className="inline ml-1 w-4 h-4" /> : <ArrowDown className="inline ml-1 w-4 h-4" />)}
+                </TableHead>
+                <TableHead
+                  className={isRTL ? "text-right" : "text-left"}
+                  onClick={() => handleSort("bonusPenalty")}
+                  style={{ cursor: "pointer" }}
+                >
+                  {t("bonusPenalty")}
+                  {sortConfig?.key === "bonusPenalty" && (sortConfig.direction === "asc" ? <ArrowUp className="inline ml-1 w-4 h-4" /> : <ArrowDown className="inline ml-1 w-4 h-4" />)}
+                </TableHead>
+                <TableHead
+                  className={isRTL ? "text-right" : "text-left"}
+                  onClick={() => handleSort("finalSalary")}
+                  style={{ cursor: "pointer" }}
+                >
+                  {t("finalSalary")}
+                  {sortConfig?.key === "finalSalary" && (sortConfig.direction === "asc" ? <ArrowUp className="inline ml-1 w-4 h-4" /> : <ArrowDown className="inline ml-1 w-4 h-4" />)}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {employees.map((employee) => (
+              {getSortedEmployees().map((employee) => (
                 <TableRow key={employee.id}>
                   <TableCell
-                    className={`font-medium sticky ${isRTL ? "right-0" : "left-0"} bg-background z-10 ${
-                      isRTL ? "text-right" : "text-left"
-                    }`}
+                    className={`font-medium sticky ${isRTL ? "right-0" : "left-0"} bg-background z-10 ${isRTL ? "text-right" : "text-left"}`}
                   >
                     <div className="min-w-[180px] whitespace-nowrap">
                       <div className="font-semibold text-sm sm:text-base">
@@ -97,12 +180,9 @@ export function PayrollTable({ employees, month, year, onEmployeeUpdate, onExpor
                     />
                   </TableCell>
                   <TableCell className={`font-semibold text-sm whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
-                    {branchId ? calculateBaseAttendedDays(employee.attendance?.[branchId] || {}).toFixed(2) : "N/A"}
-                  </TableCell>
-                  <TableCell className={`font-semibold text-sm whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
                     <div className="flex flex-col">
-                      <span className="text-green-600">+{employee.bonus_days}</span>
-                      <span className="text-red-600">-{employee.penalty_days}</span>
+                      <span className="text-green-600">+{branchId && employee.bonus_days?.[branchId]?.[monthKey] ? employee.bonus_days[branchId][monthKey] : 0}</span>
+                      <span className="text-red-600">-{branchId && employee.penalty_days?.[branchId]?.[monthKey] ? employee.penalty_days[branchId][monthKey] : 0}</span>
                     </div>
                   </TableCell>
                   <TableCell className={`font-semibold text-sm whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
