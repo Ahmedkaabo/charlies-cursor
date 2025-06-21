@@ -19,12 +19,16 @@ import { Label } from "@/components/ui/label"
 import { Plus } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { useBranch } from "@/contexts/branch-context"
+import { useAuth } from "@/contexts/auth-context"
 
 export function AddBranchDialog() {
   const { t, language } = useLanguage()
   const { addBranch } = useBranch()
+  const { getPermission } = useAuth()
   const [open, setOpen] = useState(false)
   const [branchName, setBranchName] = useState("")
+
+  if (!getPermission || !getPermission('branches', 'add')) return null
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()

@@ -47,33 +47,34 @@ const monthsAr = [
 
 export default function PayrollPage() {
   const { t, language } = useLanguage()
-  const { employees, updateEmployee } = useEmployee()
+  const { employees, updateEmployee, getActiveEmployeesForPayroll } = useEmployee()
   const { branches } = useBranch()
   const [selectedBranch, setSelectedBranch] = useState<string>(branches.length > 0 ? branches[0].id : "")
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
-  const { isAdmin, isManager, isInitialized } = useAuth()
+  const { isAdmin, isManager, isInitialized, getPermission } = useAuth()
   const router = useRouter()
-
-  if (!isInitialized) return null
-
-  if (!isAdmin && !isManager) {
-    return (
-      <div className="flex-1 flex flex-col min-h-screen items-center justify-center">
-        <Header />
-        <div className="flex flex-col items-center justify-center flex-1">
-          <h1 className="text-3xl font-bold mb-4 text-red-600">Access Denied</h1>
-          <p className="text-lg text-muted-foreground mb-8">You do not have permission to view this page.</p>
-        </div>
-      </div>
-    )
-  }
 
   useEffect(() => {
     if (branches.length > 0 && (!selectedBranch || !branches.find(b => b.id === selectedBranch))) {
       setSelectedBranch(branches[0].id)
     }
   }, [branches, selectedBranch])
+
+  if (!isInitialized || !getPermission) {
+    return (
+      <div className="flex-1 flex flex-col min-h-screen items-center justify-center">
+        <Header />
+        <div className="flex flex-col items-center justify-center flex-1">
+          <div className="w-8 h-8 border-4 border-muted-foreground border-t-primary rounded-full animate-spin mb-4"></div>
+          <p className="text-lg text-muted-foreground mb-8">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+  if (!getPermission('payroll', 'view')) {
+    return null
+  }
 
   const handleEmployeeUpdate = (employeeId: string, updates: Partial<Employee>) => {
     // The logic to merge attendance is now handled within each dialog component
@@ -118,22 +119,25 @@ export default function PayrollPage() {
     URL.revokeObjectURL(url)
   }
 
-  const employeesForPayroll = employees
-    .filter((emp) => (selectedBranch ? (emp.branch_ids || []).includes(selectedBranch) : true))
-    .filter((emp) => {
-      // Only approved
-      if (emp.status !== 'approved') return false;
-      // Only after start date
-      const [startYear, startMonth] = emp.start_date.split('-').map(Number);
-      if (selectedYear < startYear) return false;
-      if (selectedYear === startYear && selectedMonth + 1 < startMonth) return false;
-      return true;
-    })
-    .map((emp) => ({
-      ...emp,
-      month: selectedMonth,
-      year: selectedYear,
-    }))
+  const employeesForPayroll = getActiveEmployeesForPayroll(
+    employees
+      .filter((emp) => (selectedBranch ? (emp.branch_ids || []).includes(selectedBranch) : true))
+      .filter((emp) => {
+        // Only approved
+        if (emp.status !== 'approved') return false;
+        // Only after start date
+        const [startYear, startMonth] = emp.start_date.split('-').map(Number);
+        if (selectedYear < startYear) return false;
+        if (selectedYear === startYear && selectedMonth + 1 < startMonth) return false;
+        return true;
+      }),
+    selectedMonth + 1,
+    selectedYear
+  ).map((emp) => ({
+    ...emp,
+    month: selectedMonth,
+    year: selectedYear,
+  }))
 
   const currentMonth = new Date().getMonth()
   const currentYear = new Date().getFullYear()

@@ -14,6 +14,9 @@ export interface Employee {
   start_date: string // YYYY-MM-DD format
   branch_ids: string[] // Array of branch IDs the employee belongs to
   status: "pending" | "approved"
+  is_active?: boolean
+  payroll_end_month?: number
+  payroll_end_year?: number
   email?: string
   password?: string
 }

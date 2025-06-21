@@ -11,11 +11,13 @@ import { MultiSelect } from "@/components/ui/multi-select"
 import { useBranch } from "@/contexts/branch-context"
 import { useUser } from "@/contexts/user-context"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useAuth } from "@/contexts/auth-context"
 
 export function AddUserDialog() {
   const { t, language } = useLanguage()
   const { allBranches } = useBranch()
   const { addUser } = useUser()
+  const { getPermission } = useAuth()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -57,6 +59,8 @@ export function AddUserDialog() {
   }
 
   const isRTL = language === "ar"
+
+  if (!getPermission || !getPermission('users', 'add')) return null
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

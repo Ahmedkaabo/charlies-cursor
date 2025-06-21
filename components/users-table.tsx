@@ -7,8 +7,10 @@ import { MoreHorizontal } from "lucide-react"
 import { useState } from "react"
 import { useBranch } from "@/contexts/branch-context"
 import { useUser, User } from "@/contexts/user-context"
+import { useAuth } from "@/contexts/auth-context"
 import { Badge } from "@/components/ui/badge"
 import { EditUserDialog } from "./edit-user-dialog"
+import { AddUserDialog } from "./add-user-dialog"
 
 interface UsersTableProps {
   users: User[]
@@ -18,6 +20,7 @@ export function UsersTable({ users }: UsersTableProps) {
   const { t, language } = useLanguage()
   const { allBranches } = useBranch()
   const { deleteUser } = useUser()
+  const { getPermission } = useAuth()
   const [editingUser, setEditingUser] = useState<User | null>(null)
 
   const getBranchBadges = (branch_ids: string[] = [], role: string) => {
@@ -44,7 +47,8 @@ export function UsersTable({ users }: UsersTableProps) {
 
   return (
     <>
-        <div className="border rounded-lg overflow-hidden">
+      {getPermission && getPermission('users', 'add') && <AddUserDialog />}
+      <div className="border rounded-lg overflow-hidden">
         <Table>
             <TableHeader>
             <TableRow>
@@ -63,19 +67,12 @@ export function UsersTable({ users }: UsersTableProps) {
                 <TableCell><Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>{t(user.role)}</Badge></TableCell>
                 <TableCell className="space-x-1">{getBranchBadges(user.branch_ids, user.role)}</TableCell>
                 <TableCell className="text-right">
-                    {user.role !== 'admin' && (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditingUser(user)}>{t("edit")}</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-red-600">{t("delete")}</DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    {user.role !== 'admin' && getPermission && getPermission('users', 'edit') && (
+                      <>
+                        {getPermission('users', 'delete') && (
+                          <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-red-600">{t("delete")}</DropdownMenuItem>
+                        )}
+                      </>
                     )}
                 </TableCell>
                 </TableRow>

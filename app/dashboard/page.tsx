@@ -18,10 +18,11 @@ import { ChevronDown } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 export default function DashboardPage() {
+  // All hooks at the top
   const { t, language } = useLanguage()
-  const { employees, isLoading: employeesLoading } = useEmployee()
-  const { branches, isLoading: branchesLoading } = useBranch()
-  const { isAdmin, isManager, isInitialized } = useAuth()
+  const { employees: employeesRaw, isLoading: employeesLoading } = useEmployee()
+  const { branches: branchesRaw, isLoading: branchesLoading } = useBranch()
+  const { getPermission, isInitialized } = useAuth()
   const router = useRouter()
   const months = language === "ar"
     ? ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
@@ -39,27 +40,8 @@ export default function DashboardPage() {
     year: selectedYear,
   }))
 
-  if (!isInitialized) return null
-
-  // If a manager logs in, redirect them to the payroll page.
-  useEffect(() => {
-    if (isManager) {
-      router.replace("/payroll")
-    }
-  }, [isManager, router])
-
-  // Show access denied for anyone who is not an admin.
-  if (!isAdmin) {
-    return (
-      <div className="flex-1 flex flex-col min-h-screen items-center justify-center">
-        <Header />
-        <div className="flex flex-col items-center justify-center flex-1">
-          <h1 className="text-3xl font-bold mb-4 text-red-600">Access Denied</h1>
-          <p className="text-lg text-muted-foreground mb-8">You do not have permission to view this page.</p>
-        </div>
-      </div>
-    )
-  }
+  const employees = employeesRaw || [];
+  const branches = branchesRaw || [];
 
   const filteredEmployees = useMemo(() => {
     let filtered = employees
@@ -222,6 +204,22 @@ export default function DashboardPage() {
     return colors[role as keyof typeof colors] || "bg-gray-100 text-gray-800"
   }
 
+  // All hooks above, now do permission checks
+  if (!isInitialized || !getPermission) {
+    return (
+      <div className="flex-1 flex flex-col min-h-screen items-center justify-center">
+        <Header />
+        <div className="flex flex-col items-center justify-center flex-1">
+          <div className="w-8 h-8 border-4 border-muted-foreground border-t-primary rounded-full animate-spin mb-4"></div>
+          <p className="text-lg text-muted-foreground mb-8">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+  if (!getPermission('dashboard', 'view')) {
+    return null
+  }
+
   if (employeesLoading || branchesLoading) {
     return (
       <div className="flex-1 flex flex-col min-h-screen">
@@ -269,7 +267,7 @@ export default function DashboardPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
-              <DropdownMenuItem value="all" onClick={() => setSelectedBranch("all")}>All Branches</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedBranch("all")}>All Branches</DropdownMenuItem>
               {branches.map((branch) => (
                 <DropdownMenuItem key={branch.id} onClick={() => setSelectedBranch(branch.id)}>
                   {branch.name}

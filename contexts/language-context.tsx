@@ -72,6 +72,9 @@ const translations = {
     today: "Today", // New translation
     yesterday: "Yesterday", // New translation
     // Dashboard specific translations
+    terminate: "Terminate",
+    terminated: "Terminated",
+    terminatedAt: "Terminated at ({month}/{year})",
     welcomeMessage: "Welcome to Charlie's Cafe Management System",
     totalEmployees: "Total Employees",
     monthlyPayroll: "Monthly Payroll",
@@ -81,7 +84,6 @@ const translations = {
     operationalLocations: "Operational locations",
     staffByRole: "Staff by Role",
     attendanceByRole: "Attendance by Role",
-    averageAttendanceRates: "Average attendance rates for each role",
     attendanceAlerts: "Attendance Alerts",
     employeesBelow80: "Employees with attendance below 80%",
     allEmployeesGoodAttendance: "All employees have good attendance!",
@@ -194,7 +196,10 @@ const translations = {
     today: "اليوم", // New translation
     yesterday: "أمس", // New translation
     // Dashboard specific translations
-    welcomeMessage: "مرحباً بك في نظام إدارة رواتب مقهى تشارلي",
+    terminate: "إنهاء الخدمة",
+    terminated: "تم إنهاء الخدمة",
+    terminatedAt: "تم إنهاء الخدمة في ({month}/{year})",
+    welcomeMessage: "مرحبًا بك في نظام إدارة مقهى تشارليز",
     totalEmployees: "إجمالي الموظفين",
     monthlyPayroll: "كشف الرواتب الشهري",
     averageAttendance: "متوسط الحضور",
@@ -203,7 +208,6 @@ const translations = {
     operationalLocations: "المواقع التشغيلية",
     staffByRole: "الموظفون حسب المنصب",
     attendanceByRole: "الحضور حسب المنصب",
-    averageAttendanceRates: "متوسط معدلات الحضور لكل منصب",
     attendanceAlerts: "تنبيهات الحضور",
     employeesBelow80: "الموظفون الذين تقل نسبة حضورهم عن 80%",
     allEmployeesGoodAttendance: "جميع الموظفين لديهم حضور جيد!",

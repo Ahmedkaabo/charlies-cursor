@@ -20,9 +20,9 @@ interface StaffTableProps {
 
 export function StaffTable({ staff }: StaffTableProps) {
   const { t, language } = useLanguage()
-  const { isAdmin } = useAuth()
+  const { isAdmin, getPermission } = useAuth()
   const { branches } = useBranch()
-  const { approveEmployee } = useEmployee()
+  const { approveEmployee, deleteEmployee, forceDeleteEmployee } = useEmployee()
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
 
@@ -110,9 +110,17 @@ export function StaffTable({ staff }: StaffTableProps) {
                   {getBranchBadges(employee.branch_ids)}
                 </TableCell>
                 <TableCell className={isRTL ? "text-right" : "text-left"}>
-                  <Badge variant={employee.status === "approved" ? "default" : "destructive"} className="text-xs">
-                    {t(employee.status)}
-                  </Badge>
+                  {employee.is_active === false && employee.payroll_end_month && employee.payroll_end_year ? (
+                    <Badge variant="destructive" className="text-xs">
+                      {t("terminatedAt").replace("{month}", new Date(0, employee.payroll_end_month - 1).toLocaleString('default', { month: 'long' })).replace("{year}", String(employee.payroll_end_year))}
+                    </Badge>
+                  ) : employee.is_active === false ? (
+                    <Badge variant="destructive" className="text-xs">{t("terminated")}</Badge>
+                  ) : (
+                    <Badge variant={employee.status === "approved" ? "default" : "destructive"} className="text-xs">
+                      {t(employee.status)}
+                    </Badge>
+                  )}
                 </TableCell>
                 <TableCell className={isRTL ? "text-left" : "text-right"}>
                   <DropdownMenu>
@@ -123,13 +131,26 @@ export function StaffTable({ staff }: StaffTableProps) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align={isRTL ? "start" : "end"}>
-                      <DropdownMenuItem onClick={() => handleEditClick(employee)} disabled={!isAdmin}>
-                        {t("edit")}
-                      </DropdownMenuItem>
-                      {employee.status === "pending" && isAdmin && (
+                      {getPermission && getPermission('staff', 'edit') && (
+                        <DropdownMenuItem onClick={() => handleEditClick(employee)}>
+                          {t("edit")}
+                        </DropdownMenuItem>
+                      )}
+                      {employee.status === "pending" && getPermission && getPermission('staff', 'edit') && (
                         <DropdownMenuItem onClick={() => handleApproveClick(employee.id)}>
                           {t("approve")}
                         </DropdownMenuItem>
+                      )}
+                      {getPermission && getPermission('staff', 'delete') && (
+                        employee.is_active === false ? (
+                          <DropdownMenuItem onClick={() => forceDeleteEmployee(employee.id)} className="text-red-600">
+                            {t("delete")}
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem onClick={() => deleteEmployee(employee.id)} className="text-red-600">
+                            {t("terminate")}
+                          </DropdownMenuItem>
+                        )
                       )}
                     </DropdownMenuContent>
                   </DropdownMenu>

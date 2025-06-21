@@ -28,7 +28,7 @@ interface AuthContextType {
   loginWithCredentials: (email: string, password: string) => Promise<void>;
   logout: () => void;
   getUserBranches: () => string[];
-  getPermission: (module: string, type: 'view' | 'edit') => boolean;
+  getPermission: (module: string, type: 'view' | 'edit' | 'add' | 'delete') => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -137,24 +137,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAdmin = currentUser?.role === "admin"
   const isManager = currentUser?.role === "manager"
 
-  function getPermission(module: string, type: 'view' | 'edit'): boolean {
-    // Prefer user-specific permissions
-    const userPerm = currentUser?.permissions?.[module]
-    if (userPerm && typeof userPerm === 'object' && userPerm !== null && type in userPerm) {
-      return !!userPerm[type]
-    } else if (typeof userPerm === 'boolean' && type === 'view') {
-      // Legacy: treat boolean as view only
-      return userPerm
+  function getPermission(module: string, type: 'view' | 'edit' | 'add' | 'delete'): boolean {
+    // Prefer user-specific permissions if defined for this module
+    const userPerm = currentUser?.permissions?.[module];
+    if (userPerm !== undefined) {
+      if (userPerm && typeof userPerm === 'object' && userPerm !== null && type in userPerm) {
+        return !!userPerm[type];
+      } else if (typeof userPerm === 'boolean' && type === 'view') {
+        // Legacy: treat boolean as view only
+        return userPerm;
+      }
+      // If userPerm is defined but not valid, treat as false
+      return false;
     }
     // Fallback to role permissions
-    const rolePerm = permissions?.[module]
+    const rolePerm = permissions?.[module];
     if (rolePerm && typeof rolePerm === 'object' && rolePerm !== null && type in rolePerm) {
-      return !!rolePerm[type]
+      return !!rolePerm[type];
     } else if (typeof rolePerm === 'boolean' && type === 'view') {
       // Legacy: treat boolean as view only
-      return rolePerm
+      return rolePerm;
     }
-    return false
+    return false;
   }
 
   if (!isInitialized) {

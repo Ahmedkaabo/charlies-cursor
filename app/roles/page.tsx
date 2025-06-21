@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 const MODULES = ["dashboard", "payroll", "staff", "branches", "users", "roles"]
 
 export default function RolesPage() {
-  const { isAdmin } = useAuth()
+  const { getPermission, isInitialized } = useAuth()
   const [roles, setRoles] = useState<any[]>([])
   const [users, setUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -22,9 +22,9 @@ export default function RolesPage() {
   const [userPermsDraft, setUserPermsDraft] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
-    if (!isAdmin) return
+    if (!getPermission || !getPermission('roles', 'view')) return
     fetchData()
-  }, [isAdmin])
+  }, [getPermission])
 
   async function fetchData() {
     setLoading(true)
@@ -35,10 +35,10 @@ export default function RolesPage() {
     setLoading(false)
   }
 
-  async function handleRoleToggle(roleName: string, module: string, type: 'view' | 'edit') {
+  async function handleRoleToggle(roleName: string, module: string, type: 'view' | 'edit' | 'add' | 'delete') {
     setSavingRole(roleName)
     const role = roles.find((r) => r.name === roleName)
-    const currentPerm = role.permissions?.[module] || { view: false, edit: false }
+    const currentPerm = role.permissions?.[module] || { view: false, edit: false, add: false, delete: false }
     const newPerms = {
       ...role.permissions,
       [module]: {
@@ -72,16 +72,19 @@ export default function RolesPage() {
     await fetchData()
   }
 
-  if (!isAdmin) {
+  if (!isInitialized || !getPermission) {
     return (
       <div className="flex-1 flex flex-col min-h-screen items-center justify-center">
         <Header />
         <div className="flex flex-col items-center justify-center flex-1">
-          <h1 className="text-3xl font-bold mb-4 text-red-600">Access Denied</h1>
-          <p className="text-lg text-muted-foreground mb-8">You do not have permission to view this page.</p>
+          <div className="w-8 h-8 border-4 border-muted-foreground border-t-primary rounded-full animate-spin mb-4"></div>
+          <p className="text-lg text-muted-foreground mb-8">Loading...</p>
         </div>
       </div>
     )
+  }
+  if (!getPermission('roles', 'view')) {
+    return null
   }
 
   return (
@@ -115,7 +118,7 @@ export default function RolesPage() {
                           <Checkbox
                             checked={!!role.permissions?.[mod]?.view}
                             onCheckedChange={() => handleRoleToggle(role.name, mod, 'view')}
-                            disabled={role.name === 'admin' || savingRole === role.name}
+                            disabled={role.name === 'admin' || savingRole === role.name || !getPermission('roles', 'edit')}
                           />
                           <span className="text-xs">View</span>
                         </label>
@@ -123,9 +126,25 @@ export default function RolesPage() {
                           <Checkbox
                             checked={!!role.permissions?.[mod]?.edit}
                             onCheckedChange={() => handleRoleToggle(role.name, mod, 'edit')}
-                            disabled={role.name === 'admin' || savingRole === role.name}
+                            disabled={role.name === 'admin' || savingRole === role.name || !getPermission('roles', 'edit')}
                           />
                           <span className="text-xs">Edit</span>
+                        </label>
+                        <label className="flex items-center gap-1">
+                          <Checkbox
+                            checked={!!role.permissions?.[mod]?.add}
+                            onCheckedChange={() => handleRoleToggle(role.name, mod, 'add')}
+                            disabled={role.name === 'admin' || savingRole === role.name || !getPermission('roles', 'edit')}
+                          />
+                          <span className="text-xs">Add</span>
+                        </label>
+                        <label className="flex items-center gap-1">
+                          <Checkbox
+                            checked={!!role.permissions?.[mod]?.delete}
+                            onCheckedChange={() => handleRoleToggle(role.name, mod, 'delete')}
+                            disabled={role.name === 'admin' || savingRole === role.name || !getPermission('roles', 'edit')}
+                          />
+                          <span className="text-xs">Delete</span>
                         </label>
                       </div>
                     </TableCell>

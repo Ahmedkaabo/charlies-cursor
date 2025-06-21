@@ -10,6 +10,7 @@ import { toast } from "@/hooks/use-toast"
 interface EmployeeContextType {
   employees: Employee[]
   allEmployees: Employee[] // All employees (for admin use)
+  getActiveEmployeesForPayroll: (list?: Employee[], month?: number, year?: number) => Employee[]
   addEmployee: (
     employeeData: Omit<Employee, "id" | "attendance" | "bonus_days" | "penalty_days" | "month" | "year" | "status"> & {
       email?: string
@@ -19,6 +20,7 @@ interface EmployeeContextType {
   ) => void
   updateEmployee: (id: string, updates: Partial<Employee>) => void
   deleteEmployee: (id: string) => void
+  forceDeleteEmployee: (id: string) => void
   approveEmployee: (id: string) => void
   isLoading: boolean
 }
@@ -71,28 +73,41 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
     fetchEmployees()
   }, [])
 
-  // Filter employees based on user permissions
+  // Show all employees (including deleted) in staff table
   const employees = React.useMemo(() => {
     if (isAdmin) {
-      // Admin users see all employees
       return allEmployees
     }
-    
-    // Manager users only see employees from their assigned branches.
-    // If a manager has no branches assigned, show all employees so they can be configured.
     const userBranchIds = getUserBranches()
     if (userBranchIds.length === 0) {
-      return allEmployees;
+      return allEmployees
     }
-
     return allEmployees.filter(employee => {
-      // Check if employee has any branches that match user's assigned branches
       if (employee.branch_ids && employee.branch_ids.length > 0) {
         return employee.branch_ids.some(branchId => userBranchIds.includes(branchId))
       }
       return false
     })
   }, [allEmployees, isAdmin, getUserBranches])
+
+  // Exclude employees whose payroll_end_month/year is before the given month/year
+  const getActiveEmployeesForPayroll = (list = allEmployees, month?: number, year?: number) => {
+    return list.filter(emp => {
+      if (emp.is_active === false) {
+        // If no end month/year, treat as deleted for all months
+        if (emp.payroll_end_month == null || emp.payroll_end_year == null) return false
+        // If month/year not provided, treat as deleted
+        if (month == null || year == null) return false
+        // Exclude if the payroll is after the end month/year
+        if (year > emp.payroll_end_year) return false
+        if (year === emp.payroll_end_year && month > emp.payroll_end_month) return false
+        // Otherwise, include for the end month
+        if (year === emp.payroll_end_year && month === emp.payroll_end_month) return true
+        return false
+      }
+      return true
+    })
+  }
 
   const addEmployee = useCallback(
     async (
@@ -189,35 +204,64 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const deleteEmployee = useCallback(async (id: string) => {
-    console.log("Deleting employee:", id)
-
+    console.log("Soft deleting employee:", id)
+    const now = new Date()
+    const currentMonth = now.getMonth() + 1 // JS months are 0-based
+    const currentYear = now.getFullYear()
     try {
-      const { error } = await supabase.from("employees").delete().eq("id", id)
-
-      console.log("Delete employee response:", { error })
-
+      const { error } = await supabase.from("employees").update({ is_active: false, payroll_end_month: currentMonth, payroll_end_year: currentYear }).eq("id", id)
+      console.log("Soft delete employee response:", { error })
       if (error) {
-        console.error("Error deleting employee:", error)
+        console.error("Error soft deleting employee:", error)
         toast({
           variant: "destructive",
           title: "Error",
           description: `Failed to delete employee: ${error.message}`,
         })
       } else {
-        console.log("Successfully deleted employee")
-        setAllEmployees((prev) => prev.filter((emp) => emp.id !== id))
+        setAllEmployees((prev) => prev.map(emp => emp.id === id ? { ...emp, is_active: false, payroll_end_month: currentMonth, payroll_end_year: currentYear } : emp))
         toast({
           variant: "success",
           title: "Success",
-          description: "Employee deleted successfully!",
+          description: "Employee deleted (soft) successfully!",
         })
       }
     } catch (err) {
-      console.error("Network or other error deleting employee:", err)
+      console.error("Network or other error soft deleting employee:", err)
       toast({
         variant: "destructive",
         title: "Network Error",
         description: `Failed to delete employee: ${err}`,
+      })
+    }
+  }, [])
+
+  // Hard delete: permanently remove employee from DB (admin only, for terminated employees)
+  const forceDeleteEmployee = useCallback(async (id: string) => {
+    console.log("Force deleting employee:", id)
+    try {
+      const { error } = await supabase.from("employees").delete().eq("id", id)
+      if (error) {
+        console.error("Error force deleting employee:", error)
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: `Failed to permanently delete employee: ${error.message}`,
+        })
+      } else {
+        setAllEmployees((prev) => prev.filter((emp) => emp.id !== id))
+        toast({
+          variant: "success",
+          title: "Success",
+          description: "Employee permanently deleted!",
+        })
+      }
+    } catch (err) {
+      console.error("Network or other error force deleting employee:", err)
+      toast({
+        variant: "destructive",
+        title: "Network Error",
+        description: `Failed to permanently delete employee: ${err}`,
       })
     }
   }, [])
@@ -261,9 +305,11 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
       value={{ 
         employees, 
         allEmployees,
+        getActiveEmployeesForPayroll,
         addEmployee, 
         updateEmployee, 
         deleteEmployee, 
+        forceDeleteEmployee,
         approveEmployee, 
         isLoading 
       }}

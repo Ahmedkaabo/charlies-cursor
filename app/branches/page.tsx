@@ -16,7 +16,7 @@ import type { Branch } from "@/types/payroll"
 export default function BranchesPage() {
   const { t, language } = useLanguage()
   const { branches, deleteBranch } = useBranch()
-  const { isAdmin, isInitialized } = useAuth()
+  const { getPermission, isInitialized } = useAuth()
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null)
 
@@ -33,27 +33,28 @@ export default function BranchesPage() {
 
   const isRTL = language === "ar"
 
-  if (!isInitialized) return null
-
-  if (!isAdmin) {
+  if (!isInitialized || !getPermission) {
     return (
-        <div className="flex-1 flex flex-col min-h-screen items-center justify-center">
-            <Header/>
-            <div className="text-center">
-                <h1 className="text-2xl font-bold">Access Denied</h1>
-                <p className="text-muted-foreground">You do not have permission to view this page.</p>
-            </div>
+      <div className="flex-1 flex flex-col min-h-screen items-center justify-center">
+        <Header />
+        <div className="flex flex-col items-center justify-center flex-1">
+          <div className="w-8 h-8 border-4 border-muted-foreground border-t-primary rounded-full animate-spin mb-4"></div>
+          <p className="text-lg text-muted-foreground mb-8">Loading...</p>
         </div>
+      </div>
     )
+  }
+  if (!getPermission('branches', 'view')) {
+    return null
   }
 
   return (
     <div className="flex-1 flex flex-col">
       <Header />
-      <div className="space-y-4 p-4 md:p-8 pt-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">{t("branches")}</h1>
-          {isAdmin && <AddBranchDialog />}
+      <div className="space-y-8 p-4 md:p-8 pt-6">
+        <div className="flex flex-row items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold">{t("branches")}</h1>
+          {getPermission && getPermission('branches', 'add') && <AddBranchDialog />}
         </div>
 
         <div className="border rounded-lg overflow-hidden">
@@ -61,14 +62,14 @@ export default function BranchesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className={isRTL ? "text-right" : "text-left"}>{t("branchName")}</TableHead>
-                {isAdmin && <TableHead className={isRTL ? "text-left" : "text-right"}>{t("actions")}</TableHead>}
+                {getPermission && getPermission('branches', 'edit') && <TableHead className={isRTL ? "text-left" : "text-right"}>{t("actions")}</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {branches.map((branch) => (
                 <TableRow key={branch.id}>
                   <TableCell className={`font-medium ${isRTL ? "text-right" : "text-left"}`}>{branch.name}</TableCell>
-                  {isAdmin && (
+                  {getPermission && getPermission('branches', 'edit') && (
                     <TableCell className={isRTL ? "text-left" : "text-right"}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -79,9 +80,11 @@ export default function BranchesPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align={isRTL ? "start" : "end"}>
                           <DropdownMenuItem onClick={() => handleEditClick(branch)}>{t("edit")}</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDeleteClick(branch.id)}>
-                            {t("delete")}
-                          </DropdownMenuItem>
+                          {getPermission && getPermission('branches', 'delete') && (
+                            <DropdownMenuItem onClick={() => handleDeleteClick(branch.id)}>
+                              {t("delete")}
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

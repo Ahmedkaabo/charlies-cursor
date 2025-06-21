@@ -32,7 +32,7 @@ type AddEmployeeDialogProps = {}
 export function AddEmployeeDialog() {
   const { t, language } = useLanguage()
   const { addEmployee } = useEmployee()
-  const { isAdmin } = useAuth()
+  const { isAdmin, getPermission } = useAuth()
   const { branches } = useBranch()
   const [open, setOpen] = useState(false)
   const [formData, setFormData] = useState({
@@ -98,6 +98,8 @@ export function AddEmployeeDialog() {
   }
 
   const isRTL = language === "ar"
+
+  if (!getPermission || !getPermission('staff', 'add')) return null
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
